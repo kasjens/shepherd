@@ -65,7 +65,7 @@ The GUI expects the Shepherd Python backend to be running on `http://localhost:8
 ```bash
 # From the parent directory
 cd ../
-./scripts/start.sh --web
+./scripts/start.sh --api
 ```
 
 Or set a custom backend URL:

@@ -14,12 +14,17 @@ import {
   FileText,
   Code,
   Database,
-  FileImage
+  FileImage,
+  PanelRightOpen,
+  PanelRightClose
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface ArtifactsPanelProps {
   className?: string
+  width?: number
+  isCollapsed?: boolean
+  onCollapsedChange?: (collapsed: boolean) => void
 }
 
 const sampleArtifact = {
@@ -77,46 +82,79 @@ const getFileIcon = (type: string) => {
   }
 }
 
-export function ArtifactsPanel({ className }: ArtifactsPanelProps) {
+export function ArtifactsPanel({ className, width = 384, isCollapsed = false, onCollapsedChange }: ArtifactsPanelProps) {
   const [selectedTab, setSelectedTab] = useState('all')
 
+  const handleToggleCollapse = () => {
+    onCollapsedChange?.(!isCollapsed)
+  }
+
   return (
-    <div className={cn("artifacts-panel", className)}>
+    <div 
+      className={cn(
+        "terminal-panel border-l flex flex-col h-full transition-all duration-200 ease-out",
+        className
+      )}
+      style={{ 
+        width: isCollapsed ? '48px' : `${width}px`,
+        minWidth: isCollapsed ? '48px' : '250px',
+        maxWidth: isCollapsed ? '48px' : '700px'
+      }}
+    >
       {/* Header */}
-      <div className="p-4 border-b border-border">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-semibold">📦 Artifacts</h2>
+      <div className={cn("terminal-header", isCollapsed ? "p-2" : "p-4")}>
+        <div className={cn("flex items-center", isCollapsed ? "justify-center mb-2" : "justify-between mb-4")}>
+          {!isCollapsed && (
+            <h2 className="font-semibold" style={{ color: 'var(--foreground)' }}>📦 Artifacts</h2>
+          )}
           <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <Search className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <Download className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <X className="h-4 w-4" />
+            {!isCollapsed && (
+              <>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Search className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Download className="h-4 w-4" />
+                </Button>
+              </>
+            )}
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-8 w-8"
+              onClick={handleToggleCollapse}
+              title={isCollapsed ? "Expand artifacts panel" : "Collapse artifacts panel"}
+            >
+              {isCollapsed ? (
+                <PanelRightOpen className="h-4 w-4" />
+              ) : (
+                <PanelRightClose className="h-4 w-4" />
+              )}
             </Button>
           </div>
         </div>
 
         {/* Filter Tabs */}
-        <div className="flex gap-1">
-          {['all', 'code', 'scripts', 'reports'].map((tab) => (
-            <Button
-              key={tab}
-              variant={selectedTab === tab ? 'default' : 'ghost'}
-              size="sm"
-              className="h-7 px-3 text-xs"
-              onClick={() => setSelectedTab(tab)}
-            >
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
-            </Button>
-          ))}
-        </div>
+        {!isCollapsed && (
+          <div className="flex gap-1">
+            {['all', 'code', 'scripts', 'reports'].map((tab) => (
+              <Button
+                key={tab}
+                variant={selectedTab === tab ? 'default' : 'ghost'}
+                size="sm"
+                className="h-7 px-3 text-xs"
+                onClick={() => setSelectedTab(tab)}
+              >
+                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              </Button>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Artifact Viewer */}
-      <div className="flex-1 overflow-y-auto p-4">
+      {/* Artifact Viewer - only show when not collapsed */}
+      {!isCollapsed && (
+        <div className="flex-1 overflow-y-auto p-4">
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
@@ -146,22 +184,22 @@ export function ArtifactsPanel({ className }: ArtifactsPanelProps) {
             </div>
             
             {/* Metadata */}
-            <div className="p-4 border-t border-border bg-muted/20">
+            <div className="p-4 border-t border-gray-200 bg-muted/20">
               <div className="text-xs text-muted-gray mb-3">
                 Language: {sampleArtifact.language} • {sampleArtifact.size} • Created {sampleArtifact.created}
               </div>
               
               {/* Actions */}
-              <div className="flex gap-2">
-                <Button size="sm" className="h-7">
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" className="h-7 flex-shrink-0">
                   <Play className="h-3 w-3 mr-1" />
                   Run Script
                 </Button>
-                <Button variant="outline" size="sm" className="h-7">
+                <Button variant="outline" size="sm" className="h-7 flex-shrink-0">
                   <Edit className="h-3 w-3 mr-1" />
                   Edit
                 </Button>
-                <Button variant="outline" size="sm" className="h-7">
+                <Button variant="outline" size="sm" className="h-7 flex-shrink-0 text-xs px-2">
                   <Save className="h-3 w-3 mr-1" />
                   Save As...
                 </Button>
@@ -205,22 +243,23 @@ export function ArtifactsPanel({ className }: ArtifactsPanelProps) {
               <div className="text-success-green text-xs mt-2">✅ Executed successfully in 0.8s</div>
             </div>
             
-            <div className="p-3 border-t border-border bg-muted/20">
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="h-7">
+            <div className="p-3 border-t border-gray-200 bg-muted/20">
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" className="h-7 flex-shrink-0 text-xs px-2">
                   Save Output
                 </Button>
-                <Button variant="outline" size="sm" className="h-7">
+                <Button variant="outline" size="sm" className="h-7 flex-shrink-0 text-xs px-2">
                   Run Again
                 </Button>
-                <Button variant="outline" size="sm" className="h-7">
+                <Button variant="outline" size="sm" className="h-7 flex-shrink-0 text-xs px-2">
                   Clear
                 </Button>
               </div>
             </div>
           </CardContent>
         </Card>
-      </div>
+        </div>
+      )}
     </div>
   )
 }

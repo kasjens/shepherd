@@ -6,11 +6,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Application Startup
 ```bash
-# FastAPI backend server (default for new GUI)
-./scripts/start.sh --api
-
-# New professional desktop GUI (TypeScript/React)
+# Professional desktop GUI (TypeScript/React with Tauri, recommended)
 ./scripts/start.sh --gui
+
+# FastAPI backend server only
+./scripts/start.sh --api
 
 # Command line interface
 ./scripts/start.sh --cli "Create a todo list application"
@@ -203,10 +203,9 @@ shepherd/
 └── requirements.txt              # Python dependencies
 ```
 
-### Missing Components (To Be Implemented)
-- **api/** directory: FastAPI backend server (referenced in start.sh but not yet created)
+### Components To Be Implemented
 - Advanced workflow patterns (Conditional, Iterative, Hierarchical)
-- WebSocket real-time communication implementation
+- WebSocket real-time communication implementation (backend integration complete)
 - Interactive confirmation system for high-risk operations
 
 ### Current Implementation Status
@@ -215,14 +214,15 @@ shepherd/
 - Agent factory and basic agents (`src/agents/`)
 - Sequential and parallel workflows (`src/workflows/`)
 - CLI interface (`main.py`)
-- Professional GUI foundation (`shepherd-gui/`)
+- **FastAPI backend (`api/main.py`) with REST and WebSocket support**
+- **Professional TypeScript GUI (`shepherd-gui/`) with Tauri desktop integration**
+- **Three-panel resizable layout with theme system**
 - Comprehensive logging system
 - Installation and startup scripts
 
 **🚧 In Development:**
-- FastAPI backend integration (referenced but not implemented)
-- WebSocket real-time communication
-- Advanced workflow patterns
+- WebSocket real-time communication (frontend integration)
+- Advanced workflow patterns (Conditional, Iterative, Hierarchical)
 
 **📋 Architecture Notes for Developers:**
 - The project uses a factory pattern for agent creation with extensible registry

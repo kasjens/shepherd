@@ -18,6 +18,10 @@ module.exports = {
         'success-green': '#2da44e',
         'warning-amber': '#fb8500',
         'error-red': '#cf222e',
+        
+        // Theme variations
+        'panel-bg': '#f8f9fa',
+        'border-color': '#e9ecef',
       },
       fontFamily: {
         'sans': ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],

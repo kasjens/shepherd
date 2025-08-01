@@ -384,23 +384,47 @@ start_gui() {
         npm install
     fi
     
-    # Start GUI in development mode
-    if npm run tauri:dev; then
-        log_success "GUI application started successfully"
-    else
-        log_warning "Tauri desktop app failed, trying web version..."
-        if npm run dev; then
-            log_success "Web GUI started successfully"
-            log_info "Open your browser to http://localhost:3000"
-        else
-            log_error "Failed to start GUI application"
-            kill $API_PID 2>/dev/null || true
+    # Source Rust environment if available
+    if [ -f "$HOME/.cargo/env" ]; then
+        source "$HOME/.cargo/env"
+        log_info "Rust environment loaded"
+    fi
+    
+    # Start Next.js dev server in background first
+    log_info "Starting Next.js development server..."
+    npm run dev &
+    NEXTJS_PID=$!
+    
+    # Wait for Next.js to be ready
+    log_info "Waiting for Next.js server to start..."
+    for i in {1..30}; do
+        if curl -s http://localhost:3000 >/dev/null 2>&1; then
+            log_success "Next.js server is ready"
+            break
+        fi
+        if [ $i -eq 30 ]; then
+            log_error "Next.js server failed to start"
+            kill $API_PID $NEXTJS_PID 2>/dev/null || true
             exit 1
         fi
+        sleep 1
+    done
+    
+    # Now start Tauri desktop app
+    log_info "Starting Tauri desktop application..."
+    if npm run tauri:dev; then
+        log_success "Desktop application started successfully"
+    else
+        log_warning "Tauri desktop app failed, keeping web version running..."
+        log_success "Web GUI is available at http://localhost:3000"
+        log_info "Backend API is running at http://localhost:8000"
+        
+        # Keep processes running
+        wait $NEXTJS_PID
     fi
     
     # Clean up background processes
-    kill $API_PID 2>/dev/null || true
+    kill $API_PID $NEXTJS_PID 2>/dev/null || true
 }
 
 # Start CLI mode
@@ -426,6 +450,73 @@ start_cli() {
     fi
 }
 
+# Kill processes using specific ports
+kill_port_processes() {
+    local port=$1
+    local description=$2
+    
+    log_info "Checking for processes using port $port..."
+    
+    # Find processes using the port
+    local pids=$(lsof -ti:$port 2>/dev/null || true)
+    
+    if [ -n "$pids" ]; then
+        log_warning "Found $description processes using port $port"
+        for pid in $pids; do
+            local process_name=$(ps -p $pid -o comm= 2>/dev/null || echo "unknown")
+            log_info "Terminating process $pid ($process_name)..."
+            kill $pid 2>/dev/null || true
+        done
+        
+        # Wait a moment for processes to terminate
+        sleep 2
+        
+        # Force kill any remaining processes
+        local remaining_pids=$(lsof -ti:$port 2>/dev/null || true)
+        if [ -n "$remaining_pids" ]; then
+            log_warning "Force killing remaining processes on port $port"
+            for pid in $remaining_pids; do
+                kill -9 $pid 2>/dev/null || true
+            done
+            sleep 1
+        fi
+        
+        log_success "Port $port cleared"
+    else
+        log_info "Port $port is available"
+    fi
+}
+
+# Cleanup previous instances
+cleanup_previous_instances() {
+    log_step "Cleaning up previous instances..."
+    
+    # Kill processes on common ports
+    kill_port_processes 3000 "Next.js development server"
+    kill_port_processes 8000 "FastAPI backend server"
+    
+    # Kill any remaining Shepherd-related processes
+    log_info "Checking for other Shepherd processes..."
+    
+    # Kill any running uvicorn processes
+    pkill -f "uvicorn.*api.main:app" 2>/dev/null || true
+    
+    # Kill any npm dev processes in shepherd-gui directory
+    pkill -f "npm run dev" 2>/dev/null || true
+    pkill -f "npm run tauri:dev" 2>/dev/null || true
+    
+    # Kill any Node.js processes running Next.js
+    pkill -f "next-server" 2>/dev/null || true
+    pkill -f ".next" 2>/dev/null || true
+    
+    # Kill any Tauri dev processes
+    pkill -f "tauri dev" 2>/dev/null || true
+    pkill -f "cargo run.*shepherd-gui" 2>/dev/null || true
+    
+    sleep 2
+    log_success "Previous instances cleaned up"
+}
+
 # Handle script interruption
 cleanup() {
     echo
@@ -435,6 +526,18 @@ cleanup() {
     if [ -n "$OLLAMA_PID" ]; then
         kill $OLLAMA_PID 2>/dev/null || true
     fi
+    
+    if [ -n "$API_PID" ]; then
+        kill $API_PID 2>/dev/null || true
+    fi
+    
+    if [ -n "$NEXTJS_PID" ]; then
+        kill $NEXTJS_PID 2>/dev/null || true
+    fi
+    
+    # Clean up any remaining processes
+    kill_port_processes 3000 "Next.js"
+    kill_port_processes 8000 "FastAPI"
     
     log_success "Cleanup completed"
     exit 0
@@ -446,6 +549,7 @@ main() {
     
     parse_args "$@"
     
+    cleanup_previous_instances
     check_prerequisites
     activate_venv
     check_python_deps

@@ -3,63 +3,90 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Plus, Settings, HelpCircle, Search, MessageSquare, Package } from 'lucide-react'
+import { Plus, Settings, HelpCircle, Search, Package, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface SidebarProps {
   className?: string
+  width?: number
+  isCollapsed?: boolean
+  onCollapsedChange?: (collapsed: boolean) => void
 }
 
-export function Sidebar({ className }: SidebarProps) {
-  const [isCollapsed, setIsCollapsed] = useState(false)
+export function Sidebar({ className, width = 320, isCollapsed = false, onCollapsedChange }: SidebarProps) {
+
+  const handleToggleCollapse = () => {
+    onCollapsedChange?.(!isCollapsed)
+  }
 
   return (
-    <div className={cn("sidebar-panel", className)}>
+    <div 
+      className={cn(
+        "terminal-panel border-r flex flex-col h-full transition-all duration-200 ease-out",
+        className
+      )}
+      style={{ 
+        width: isCollapsed ? '48px' : `${width}px`,
+        minWidth: isCollapsed ? '48px' : '200px',
+        maxWidth: isCollapsed ? '48px' : '600px'
+      }}
+    >
       {/* Header */}
-      <div className="p-4 border-b border-border">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-shepherd-blue rounded-sm flex items-center justify-center text-white text-sm font-bold">
-              🐑
+      <div className={cn("terminal-header", isCollapsed ? "p-2" : "p-4")}>
+        <div className={cn("flex items-center", isCollapsed ? "justify-center mb-2" : "justify-between mb-4")}>
+          {!isCollapsed && (
+            <div className="flex items-center gap-3">
+              <img 
+                src="/Shepherd.png" 
+                alt="Shepherd Logo" 
+                className="w-6 h-6 object-contain"
+              />
+              <span className="font-semibold text-lg" style={{ color: 'var(--foreground)' }}>Shepherd</span>
             </div>
-            {!isCollapsed && <span className="font-semibold text-lg">Shepherd</span>}
-          </div>
+          )}
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setIsCollapsed(!isCollapsed)}
+            onClick={handleToggleCollapse}
             className="h-8 w-8"
+            title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
-            <MessageSquare className="h-4 w-4" />
+            {isCollapsed ? (
+              <PanelLeftOpen className="h-4 w-4" />
+            ) : (
+              <PanelLeftClose className="h-4 w-4" />
+            )}
           </Button>
         </div>
         {!isCollapsed && (
-          <Button className="w-full" size="sm">
+          <Button className="w-full shepherd-button-primary" size="sm">
             <Plus className="h-4 w-4 mr-2" />
             New Chat
           </Button>
         )}
       </div>
 
-      {/* Search */}
+      {/* Content - only show when not collapsed */}
       {!isCollapsed && (
-        <div className="p-4 border-b border-border">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-gray" />
-            <Input
-              placeholder="Search conversations..."
-              className="pl-9 h-9"
-            />
+        <>
+          {/* Search */}
+          <div className="p-4 terminal-header">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4" style={{ color: 'var(--muted-gray)' }} />
+              <Input
+                placeholder="Search conversations..."
+                className="pl-9 h-9 bg-transparent border"
+                style={{ borderColor: 'var(--border-color)', color: 'var(--foreground)' }}
+              />
+            </div>
           </div>
-        </div>
-      )}
 
-      {/* Conversations */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="p-4">
-          <div className="text-xs font-medium text-muted-gray uppercase tracking-wide mb-3">
-            📋 CONVERSATIONS
-          </div>
+          {/* Conversations */}
+          <div className="flex-1 overflow-y-auto">
+            <div className="p-4">
+              <div className="text-xs font-medium text-muted-gray uppercase tracking-wide mb-3">
+                📋 CONVERSATIONS
+              </div>
           
           {/* Sample conversations */}
           <div className="space-y-2">
@@ -119,22 +146,22 @@ export function Sidebar({ className }: SidebarProps) {
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="p-4 border-t border-border space-y-2">
-        <Button variant="ghost" className="w-full justify-start" size="sm">
-          <Settings className="h-4 w-4 mr-2" />
-          {!isCollapsed && "Settings"}
-        </Button>
-        <Button variant="ghost" className="w-full justify-start" size="sm">
-          <HelpCircle className="h-4 w-4 mr-2" />
-          {!isCollapsed && "Help"}
-        </Button>
-        {!isCollapsed && (
-          <div className="text-xs text-muted-gray mt-2">
-            Status: ● Connected to Ollama
+          {/* Footer */}
+          <div className="p-4 border-t border-gray-200 space-y-2">
+            <Button variant="ghost" className="w-full justify-start" size="sm">
+              <Settings className="h-4 w-4 mr-2" />
+              Settings
+            </Button>
+            <Button variant="ghost" className="w-full justify-start" size="sm">
+              <HelpCircle className="h-4 w-4 mr-2" />
+              Help
+            </Button>
+            <div className="text-xs mt-2" style={{ color: 'var(--muted-gray)' }}>
+              Status: ● Connected to Ollama
+            </div>
           </div>
-        )}
-      </div>
+        </>
+      )}
     </div>
   )
 }

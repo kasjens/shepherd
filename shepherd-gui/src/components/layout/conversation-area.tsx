@@ -129,13 +129,13 @@ I'm working on implementing your request. This may take a moment while I analyze
   }
 
   return (
-    <div className={cn("main-panel", className)}>
+    <div className={cn("flex-1 flex flex-col overflow-hidden h-full", className)} style={{ backgroundColor: 'var(--background)' }}>
       {/* Header */}
-      <div className="p-4 border-b border-border bg-card">
+      <div className="p-4 terminal-header">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-semibold">Server Performance Analysis</h1>
-            <p className="text-sm text-muted-gray">
+            <h1 className="text-lg font-semibold" style={{ color: 'var(--foreground)' }}>Server Performance Analysis</h1>
+            <p className="text-sm" style={{ color: 'var(--muted-gray)' }}>
               Started 25 minutes ago • {messages.length} messages • 3 artifacts generated
             </p>
           </div>
@@ -202,7 +202,7 @@ I'm working on implementing your request. This may take a moment while I analyze
       </div>
 
       {/* Input Area */}
-      <div className="p-4 border-t border-border bg-card">
+      <div className="p-4 border-t border-gray-200 bg-gray-50">
         <div className="flex gap-3 items-end">
           <div className="flex-1">
             <Textarea
@@ -217,7 +217,7 @@ I'm working on implementing your request. This may take a moment while I analyze
             onClick={handleSend}
             disabled={!message.trim()}
             size="lg"
-            className="px-6"
+            className="px-6 shepherd-button-primary"
           >
             <Send className="h-4 w-4 mr-2" />
             Send

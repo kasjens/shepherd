@@ -13,7 +13,7 @@ Shepherd is an intelligent multi-agent system that automatically determines the 
 - 🧠 **Intelligent Prompt Analysis** - Automatically analyzes complexity, urgency, and task requirements
 - 🔀 **Dynamic Workflow Selection** - Chooses optimal patterns (Sequential, Parallel, Conditional, etc.)
 - 🤖 **Multi-Agent Orchestration** - Creates and coordinates specialized AI agents
-- 🖥️ **Multiple Interfaces** - Professional desktop GUI, API backend, and command-line modes
+- 🖥️ **Multiple Interfaces** - Modern TypeScript desktop GUI with Tauri, FastAPI backend, and command-line modes
 - 🛡️ **Safety-First Design** - Built-in validation and error handling
 - 🚀 **Local LLM Support** - Works with Ollama for privacy-focused AI
 
@@ -32,13 +32,13 @@ cd shepherd
 
 The installation script will:
 - Install Python 3.9+ and system dependencies
-- Install Node.js 18+ and npm for the GUI
-- Install Rust toolchain for desktop builds
+- Install Node.js 18+ and npm for the modern GUI
+- Install Rust toolchain for Tauri desktop builds
 - Create a virtual environment
-- Install all Python packages
-- Install GUI dependencies (TypeScript/React)
+- Install all Python packages (FastAPI, CrewAI, etc.)
+- Install GUI dependencies (Next.js, TypeScript, Tailwind CSS)
 - Install and configure Ollama (local LLM)
-- Download default AI models
+- Download default AI models (llama3.1:8b)
 - Set up environment configuration
 
 ### 2. Running the Application
@@ -47,13 +47,13 @@ The installation script will:
 ```bash
 ./scripts/start.sh --gui
 ```
-Launches the modern TypeScript/React desktop application with Tauri.
+Launches the modern TypeScript/React desktop application with Tauri. This automatically starts both the FastAPI backend and the desktop GUI.
 
 #### API Backend Server
 ```bash
 ./scripts/start.sh --api
 ```
-Starts the FastAPI backend server at http://localhost:8000
+Starts the FastAPI backend server at http://localhost:8000 with documentation at /docs
 
 #### Manual GUI Development
 ```bash
@@ -143,14 +143,17 @@ shepherd/
 │   └── utils/                    # Utilities and logging
 │       └── logger.py            # Comprehensive logging system
 ├── shepherd-gui/                 # Modern TypeScript GUI
-│   ├── src/                     # React/Next.js source
-│   │   ├── app/                 # Next.js app router
-│   │   ├── components/          # React components
-│   │   ├── lib/                 # Utilities and stores
-│   │   └── types/               # TypeScript definitions
-│   ├── src-tauri/               # Tauri desktop integration
+│   ├── src/                     # Next.js 15 with App Router
+│   │   ├── app/                 # Next.js app pages
+│   │   ├── components/          # React components (UI + Layout)
+│   │   ├── lib/                 # API integration and utilities  
+│   │   ├── stores/              # Zustand state management
+│   │   └── styles/              # Tailwind CSS and themes
+│   ├── src-tauri/               # Tauri 2 desktop integration
 │   ├── package.json             # Node.js dependencies
-│   └── tailwind.config.js       # Styling configuration
+│   └── tailwind.config.js       # Tailwind CSS configuration
+├── api/                          # FastAPI backend server
+│   └── main.py                  # REST API with WebSocket support
 ├── scripts/                      # Installation and startup scripts
 │   ├── install.sh               # Comprehensive installation
 │   └── start.sh                 # Multi-mode launcher (API/GUI/CLI)
@@ -360,26 +363,27 @@ Use the built-in log analyzer for troubleshooting:
 ## Current Status: Phase 1 MVP
 
 ### ✅ Completed Features
-- Basic prompt analysis engine
+- Basic prompt analysis engine with natural language processing
 - Simple workflow pattern detection (Sequential & Parallel)
 - Sequential and parallel workflow execution
 - Basic agent creation and task assignment
 - **Professional TypeScript/React GUI with Tauri desktop support**
+- **FastAPI backend with REST API and WebSocket support**
 - **Modern installation system with Node.js and Rust support**
 - Advanced logging system with rotation and analysis tools
-- System task execution with real performance analysis
+- System task execution with real performance analysis (SystemAgent)
+- **Three-panel responsive GUI with resizable panels and themes**
 
 ### 🚧 Phase 2 (In Progress)
-- **FastAPI backend implementation for GUI communication**
-- **WebSocket real-time updates**
-- Interactive confirmation system
+- Interactive confirmation system for high-risk operations
 - Risk assessment and validation
 - Enhanced error handling and recovery
+- Advanced workflow patterns (Conditional, Iterative)
 
 ### 🔮 Future Phases
 - **Phase 3**: Advanced workflow patterns (Conditional, Iterative, Hierarchical)
-- **Phase 4**: Learning from user feedback and workflow optimization
-- **Phase 5**: Enterprise features (multi-user, audit logging, API)
+- **Phase 4**: Learning from user feedback and workflow optimization  
+- **Phase 5**: Enterprise features (multi-user, audit logging, advanced API)
 
 ## Troubleshooting
 

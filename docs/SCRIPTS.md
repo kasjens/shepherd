@@ -7,10 +7,10 @@ This document describes all the helper scripts and tools created for the Shepher
 ```
 shepherd/
 ├── scripts/           # Installation and startup scripts
-├── desktop/          # Desktop application launchers
+├── api/              # FastAPI backend server
+├── shepherd-gui/     # Modern TypeScript GUI with Tauri
 ├── tools/            # Development and analysis tools
 ├── src/              # Main application source code
-├── app.py            # Gradio web interface
 ├── main.py           # CLI entry point
 └── requirements.txt  # Python dependencies
 ```
@@ -25,8 +25,11 @@ shepherd/
 **What it does**:
 - Detects OS (Ubuntu/Debian, RedHat/CentOS/Fedora)
 - Installs Python 3.9+ and system dependencies
+- Installs Node.js 18+ and npm for the GUI
+- Installs Rust toolchain for Tauri desktop builds
 - Creates Python virtual environment
 - Installs all Python packages from requirements.txt
+- Installs GUI dependencies (Next.js, TypeScript, Tailwind CSS)
 - Installs and configures Ollama (local LLM)
 - Downloads default AI models (llama3.1:8b)
 - Creates environment configuration (.env)
@@ -42,6 +45,7 @@ shepherd/
 - ✅ **Colored output** with progress indicators
 - ✅ **Error handling** with helpful messages
 - ✅ **Cross-platform** Linux support
+- ✅ **Modern stack setup** (Node.js, Rust, Python)
 
 ---
 
@@ -49,96 +53,101 @@ shepherd/
 **Purpose**: Intelligent startup script with multiple modes and error handling
 
 **What it does**:
-- Checks all prerequisites (Python, venv, dependencies)
+- Checks all prerequisites (Python, Node.js, Rust, venv, dependencies)
 - Activates virtual environment automatically
 - Verifies Python dependencies and installs if missing
 - Checks Ollama status and starts if needed
 - Provides comprehensive logging information
-- Supports multiple launch modes
+- Supports multiple launch modes with process cleanup
 
 **Launch Modes**:
-- `./scripts/start.sh` - **Web interface** (default)
-- `./scripts/start.sh --desktop` - **Browser-based desktop mode**
-- `./scripts/start.sh --native-app` - **True desktop application**
+- `./scripts/start.sh --gui` - **Professional Desktop GUI** (default, recommended)
+- `./scripts/start.sh --api` - **FastAPI backend server only**
 - `./scripts/start.sh --cli "request"` - **Command-line execution**
 - `./scripts/start.sh --cli --interactive` - **Interactive CLI**
+
+**GUI Mode Features**:
+- Automatically starts FastAPI backend on port 8000
+- Launches Tauri desktop application
+- Handles process cleanup and port management 
+- Falls back to web version if desktop fails
 
 **Features**:
 - ✅ **Smart dependency checking** and auto-installation
 - ✅ **Ollama management** (auto-start, model verification)
-- ✅ **Multiple interfaces** (web, desktop, CLI)
+- ✅ **Process cleanup** (kills existing processes on ports 3000, 8000)
+- ✅ **Multiple interfaces** (desktop GUI, API server, CLI)
 - ✅ **Comprehensive error handling**
 - ✅ **Logging setup** information
 
 ---
 
-## 📂 **desktop/** - Desktop Application Launchers
+## 📂 **api/** - Backend Server
 
-### **`desktop_app.py`** - Native Desktop Application
-**Purpose**: True native desktop app using pywebview
+### **`main.py`** - FastAPI Backend Server
+**Purpose**: REST API server with WebSocket support for the GUI
 
-**What it does**:
-- Creates native desktop window using pywebview
-- Starts Gradio server in background (port 7861)
-- Provides platform detection (GTK/Qt)
-- Falls back to Chrome app mode if native fails
-- Handles cleanup and shutdown gracefully
+**What it provides**:
+- RESTful API endpoints for chat and workflow execution
+- WebSocket support for real-time communication
+- CORS support for frontend integration
+- Integration with the core Shepherd orchestrator
+- API documentation at `/docs` endpoint
 
-**Features**:
-- ✅ **Native window** with OS integration
-- ✅ **Platform detection** (GTK/Qt backends)
-- ✅ **Automatic fallback** to browser mode
-- ✅ **Proper cleanup** and signal handling
+**Endpoints**:
+- `POST /api/chat/send` - Send messages and execute workflows
+- `GET /api/health` - Health check endpoint
+- `WS /ws` - WebSocket for real-time updates
 
 **Usage**:
 ```bash
-python desktop/desktop_app.py
+# Start API server directly
+./scripts/start.sh --api
+
+# API available at: http://localhost:8000
+# Documentation: http://localhost:8000/docs
 ```
 
 ---
 
-### **`app_mode.py`** - Chrome App Mode Launcher (Recommended)
-**Purpose**: Reliable desktop experience using Chrome's app mode
+## 📂 **shepherd-gui/** - Modern TypeScript GUI
 
-**What it does**:
-- Starts Gradio server on port 7862
-- Launches Chrome/Chromium in app mode
-- Provides desktop-like experience without browser UI
-- Handles Chrome process management
-- Supports multiple Chrome variants (google-chrome, chromium)
+### **Next.js + Tauri Application**
+**Purpose**: Professional desktop application with web fallback
 
-**Chrome App Mode Features**:
-- ✅ **No browser UI** (address bar, tabs, bookmarks)
-- ✅ **Native window controls** (minimize, maximize, close)
-- ✅ **Desktop integration** with custom window class
-- ✅ **Reliable cross-platform** support
+**Technology Stack**:
+- **Next.js 15** with App Router
+- **TypeScript 5** for type safety
+- **Tailwind CSS** for styling
+- **Tauri 2** for desktop integration
+- **Zustand** for state management
+- **Shadcn/ui** for components
 
-**Usage**:
+**Development Commands**:
 ```bash
-python desktop/app_mode.py
+cd shepherd-gui
+
+# Install dependencies
+npm install
+
+# Start web version (development)
+npm run dev                # http://localhost:3000
+
+# Start desktop app (development)  
+npm run tauri:dev         # Native desktop application
+
+# Build for production
+npm run build             # Web build
+npm run tauri:build       # Desktop app build
 ```
 
----
-
-### **`setup_desktop.sh`** - Desktop Dependencies Installer
-**Purpose**: Install system dependencies for native desktop support
-
-**What it does**:
-- Detects Linux distribution
-- Installs GTK3 and Qt6 system packages
-- Installs Python webview with proper backend
-- Tests webview installation
-- Provides troubleshooting guidance
-
-**Supported Systems**:
-- Ubuntu/Debian: `apt install python3-gi gtk3 webkit2gtk qt6-base`
-- Fedora/RHEL: `dnf install python3-gobject gtk3-devel qt6-qtbase`
-- Arch/Manjaro: `pacman -S python-gobject gtk3 qt6-base`
-
-**Usage**:
-```bash
-./desktop/setup_desktop.sh
-```
+**GUI Features**:
+- ✅ **Three-panel layout** (sidebar, conversation, artifacts)
+- ✅ **Resizable panels** with drag handles
+- ✅ **Multiple themes** (light, dark, blue) with persistence
+- ✅ **Real-time communication** with backend via WebSocket
+- ✅ **Cross-platform desktop** apps (Windows, macOS, Linux)
+- ✅ **Responsive design** for multiple screen sizes
 
 ---
 
@@ -172,50 +181,36 @@ python desktop/app_mode.py
 
 ---
 
-### **`test_app_mode.py`** - Desktop Mode Compatibility Tester
-**Purpose**: Test Chrome/Chromium availability for app mode
-
-**What it does**:
-- Checks for Chrome/Chromium installations
-- Tests version compatibility
-- Verifies app mode support
-- Provides installation guidance if missing
-
-**Usage**:
-```bash
-python tools/test_app_mode.py
-```
-
-**Output Example**:
-```
-✅ Found: google-chrome
-   Version: Google Chrome 138.0.7204.168
-   App mode will work with: google-chrome --app=<url>
-```
-
----
-
 ## 🚀 **Quick Start Guide**
 
 ### **First Time Setup**:
 ```bash
-# 1. Install everything
+# 1. Install everything (Python, Node.js, Rust, dependencies)
 ./scripts/install.sh
 
-# 2. Start as desktop app
-./scripts/start.sh --native-app
+# 2. Start the desktop application (recommended)
+./scripts/start.sh --gui
 ```
 
 ### **Daily Usage**:
 ```bash
-# Desktop app (recommended)
-./scripts/start.sh --native-app
+# Desktop GUI (recommended) - starts backend + GUI
+./scripts/start.sh --gui
 
-# Web interface
-./scripts/start.sh
+# API server only (for development)
+./scripts/start.sh --api
 
 # CLI mode
 ./scripts/start.sh --cli "Create a todo app"
+```
+
+### **Development Workflow**:
+```bash
+# Terminal 1: Start API backend
+./scripts/start.sh --api
+
+# Terminal 2: Start GUI development
+cd shepherd-gui && npm run tauri:dev
 ```
 
 ### **Troubleshooting**:
@@ -223,54 +218,92 @@ python tools/test_app_mode.py
 # Check logs
 ./tools/analyze_logs.py --all
 
-# Test desktop compatibility
-python tools/test_app_mode.py
+# Verify all dependencies are installed
+./scripts/install.sh
 
-# Setup native desktop support
-./desktop/setup_desktop.sh
+# Check system status
+./scripts/start.sh --api  # Check if backend starts correctly
 ```
 
 ---
 
-## 🔧 **Development Workflow**
+## 🔧 **Architecture Overview**
 
-### **For Development**:
-1. **Use logging** - All actions are logged to `logs/` directory
-2. **Analyze performance** - Use `analyze_logs.py` to identify bottlenecks
-3. **Test changes** - Multiple interfaces (web, desktop, CLI) for testing
-4. **Debug issues** - Structured JSON logs for automated analysis
+### **Modern Stack**:
+- **Backend**: FastAPI (Python) + CrewAI for orchestration
+- **Frontend**: Next.js 15 (TypeScript) + Tailwind CSS
+- **Desktop**: Tauri 2 (Rust) for native apps
+- **State**: Zustand for client-side state management
+- **LLM**: Ollama for local model support
 
-### **For Deployment**:
-1. **Run install.sh** - Sets up complete environment
-2. **Use start.sh** - Handles all startup logic and error cases
-3. **Monitor logs** - Automated log rotation and analysis tools
-4. **Desktop experience** - Native app or Chrome app mode for users
+### **Communication Flow**:
+1. **GUI** ↔ **FastAPI** (REST + WebSocket)
+2. **FastAPI** ↔ **Core Orchestrator** (Python)
+3. **Orchestrator** ↔ **CrewAI Agents** (LLM execution)
+4. **Agents** ↔ **Ollama** (Local LLM models)
 
----
-
-## 📋 **Script Dependencies**
-
-### **System Requirements**:
-- **Linux** (Ubuntu/Debian/RHEL/Fedora/Arch)
-- **Python 3.9+**
-- **Bash 4.0+**
-- **Internet connection** (for package installation)
-
-### **Optional Dependencies**:
-- **Chrome/Chromium** - For app mode (recommended)
-- **GTK3/Qt6** - For native desktop (advanced)
-- **Ollama** - For local LLM support
-
-### **Auto-Installed**:
-- **Python packages** - Via requirements.txt
-- **Ollama** - Local LLM runtime
-- **AI models** - Default llama3.1:8b
+### **Process Management**:
+- **Port 8000**: FastAPI backend server
+- **Port 3000**: Next.js development server (when in web mode)
+- **Desktop App**: Native window via Tauri (no browser)
 
 ---
 
-This organization provides a clear separation of concerns:
-- **scripts/** - System setup and startup
-- **desktop/** - Desktop application variants  
-- **tools/** - Development and analysis utilities
+## 📋 **System Requirements**
 
-Each script is self-contained with proper error handling, logging, and user guidance.
+### **For Users**:
+- **Operating System**: Linux, macOS, or Windows
+- **Memory**: 8GB+ RAM (for local LLM)
+- **Storage**: 20GB+ free space (for models)
+- **Network**: Internet connection for installation
+
+### **For Developers**:
+- **Python**: 3.9+ with pip
+- **Node.js**: 18+ with npm
+- **Rust**: 1.60+ (for Tauri builds)
+- **Ollama**: Latest version for LLM support
+
+### **Auto-Installed Dependencies**:
+- **Python packages**: FastAPI, CrewAI, Pydantic, etc.
+- **Node.js packages**: Next.js, TypeScript, Tailwind CSS, etc.
+- **Ollama models**: llama3.1:8b (default)
+
+---
+
+## 🔄 **Migration from Old System**
+
+### **What Changed**:
+- ❌ **Removed**: Gradio web interface (`app.py`)
+- ❌ **Removed**: Desktop wrapper scripts (`desktop/` directory)
+- ❌ **Removed**: Old start modes (`--web`, `--desktop`, `--native-app`)
+
+### **What's New**:
+- ✅ **Added**: FastAPI backend (`api/main.py`)
+- ✅ **Added**: Professional TypeScript GUI (`shepherd-gui/`)
+- ✅ **Added**: Tauri desktop integration
+- ✅ **Added**: New start modes (`--gui`, `--api`, `--cli`)
+
+### **Command Migration**:
+```bash
+# Old commands (deprecated)
+./scripts/start.sh --web          # ❌ Removed
+./scripts/start.sh --desktop      # ❌ Removed
+./scripts/start.sh --native-app   # ❌ Removed
+
+# New commands (current)
+./scripts/start.sh --gui          # ✅ Desktop GUI (recommended)
+./scripts/start.sh --api          # ✅ API server only
+./scripts/start.sh --cli          # ✅ CLI mode (unchanged)
+```
+
+---
+
+This new architecture provides:
+- **Better Performance**: Native desktop app vs browser wrapper
+- **Modern UX**: Professional React interface vs Gradio limitations
+- **Type Safety**: Full TypeScript stack vs untyped Python
+- **Cross-Platform**: Single codebase for all platforms
+- **Maintainability**: Clean separation between backend and frontend
+- **Extensibility**: Modern React ecosystem for future features
+
+The scripts maintain the same ease-of-use while supporting a much more powerful and professional application stack.
