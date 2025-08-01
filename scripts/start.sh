@@ -94,8 +94,10 @@ check_prerequisites() {
         errors=$((errors + 1))
     fi
     
-    if [ ! -f "app.py" ]; then
-        log_error "app.py not found"
+    # Check for API module (for new GUI)
+    if [ ! -d "api" ] && [ "$MODE" = "api" -o "$MODE" = "gui" ]; then
+        log_error "API module not found (required for new GUI)"
+        log_info "The new GUI requires a FastAPI backend in the 'api/' directory"
         errors=$((errors + 1))
     fi
     
@@ -132,9 +134,9 @@ import sys
 missing_deps = []
 
 try:
-    import gradio
+    import fastapi
 except ImportError:
-    missing_deps.append('gradio')
+    missing_deps.append('fastapi')
 
 try:
     import pydantic
@@ -249,10 +251,10 @@ EOF
 
 # Parse command line arguments
 parse_args() {
-    MODE="web"
+    MODE="api"  # Default to API server for new GUI
     REQUEST=""
     INTERACTIVE=false
-    PORT=7860
+    PORT=8000  # Changed to 8000 for FastAPI backend
     HOST="0.0.0.0"
     
     while [[ $# -gt 0 ]]; do
@@ -261,12 +263,12 @@ parse_args() {
                 MODE="cli"
                 shift
                 ;;
-            --desktop)
-                MODE="desktop"
+            --api)
+                MODE="api"
                 shift
                 ;;
-            --native-app)
-                MODE="native_app"
+            --gui)
+                MODE="gui"
                 shift
                 ;;
             --interactive|-i)
@@ -301,101 +303,104 @@ show_help() {
     echo
     echo -e "${YELLOW}Options:${NC}"
     echo "  --cli                Run in command-line mode"
-    echo "  --desktop            Run as desktop app (opens in browser without server UI)"
-    echo "  --native-app         Run as true native desktop application"
+    echo "  --api                Run FastAPI backend server for GUI (default)"
+    echo "  --gui                Launch the new professional desktop GUI"
     echo "  --interactive, -i    Run in interactive mode (CLI only)"
-    echo "  --port, -p PORT      Specify port for web interface (default: 7860)"
-    echo "  --host, -h HOST      Specify host for web interface (default: 0.0.0.0)"
+    echo "  --port, -p PORT      Specify port for API server (default: 8000)"
+    echo "  --host, -h HOST      Specify host for API server (default: 0.0.0.0)"
     echo "  --help               Show this help message"
     echo
+    echo -e "${YELLOW}New Professional GUI:${NC}"
+    echo "  The GUI has been upgraded to a modern TypeScript/React application."
+    echo "  To use the new GUI:"
+    echo "    1. Start the backend: ./start.sh --api"
+    echo "    2. In another terminal: cd shepherd-gui && npm run dev"
+    echo "    3. Or build desktop app: cd shepherd-gui && npm run tauri:dev"
+    echo
     echo -e "${YELLOW}Examples:${NC}"
-    echo "  ./start.sh                                    # Start web interface"
-    echo "  ./start.sh --desktop                         # Start as desktop app (browser-based)"
-    echo "  ./start.sh --native-app                      # Start as native desktop application"
-    echo "  ./start.sh --port 8080                       # Start web interface on port 8080"
+    echo "  ./start.sh                                    # Start FastAPI backend (default)"
+    echo "  ./start.sh --api                             # Start FastAPI backend explicitly"
+    echo "  ./start.sh --gui                             # Launch new desktop GUI"
+    echo "  ./start.sh --api --port 8080                 # Start backend on port 8080"
     echo "  ./start.sh --cli \"Create a todo app\"         # Run CLI with request"
     echo "  ./start.sh --cli --interactive                # Run CLI in interactive mode"
     echo
 }
 
-# Start web interface
-start_web() {
-    log_step "Starting web interface..."
+# Start API server
+start_api() {
+    log_step "Starting FastAPI backend server..."
     
-    log_info "Web interface will be available at: http://localhost:$PORT"
+    log_info "API server will be available at: http://$HOST:$PORT"
+    log_info "WebSocket endpoint: ws://$HOST:$PORT/ws"
+    log_info "API documentation: http://$HOST:$PORT/docs"
     log_info "Press Ctrl+C to stop the server"
     echo
     
     # Set environment variables for the application
-    export GRADIO_SERVER_NAME="$HOST"
-    export GRADIO_SERVER_PORT="$PORT"
+    export SHEPHERD_API_HOST="$HOST"
+    export SHEPHERD_API_PORT="$PORT"
     
-    # Start the application
-    if python app.py; then
-        log_success "Application started successfully"
+    # Start the FastAPI application
+    if uvicorn api.main:app --host "$HOST" --port "$PORT" --reload; then
+        log_success "API server started successfully"
     else
-        log_error "Failed to start web interface"
+        log_error "Failed to start API server"
+        log_info "Make sure the api/ module and dependencies are properly installed"
         exit 1
     fi
 }
 
-# Start desktop app
-start_desktop() {
-    log_step "Starting desktop application..."
+# Start GUI application
+start_gui() {
+    log_step "Starting professional desktop GUI..."
     
-    log_info "Opening Shepherd as desktop app..."
-    log_info "Press Ctrl+C to stop the application"
-    echo
-    
-    # Set environment variable for desktop mode
-    export SHEPHERD_DESKTOP_MODE="true"
-    
-    # Start the application
-    if python app.py --desktop; then
-        log_success "Desktop application started successfully"
-    else
-        log_error "Failed to start desktop application"
+    # Check if GUI directory exists
+    if [ ! -d "shepherd-gui" ]; then
+        log_error "GUI directory 'shepherd-gui' not found"
+        log_info "Please ensure the GUI has been properly set up"
         exit 1
     fi
-}
-
-# Start native desktop app
-start_native_app() {
-    log_step "Starting native desktop application..."
     
-    log_info "Launching Shepherd as native desktop app..."
-    log_info "This provides a true desktop experience (not browser-based)"
-    log_info "Press Ctrl+C to stop the application"
+    log_info "Launching modern TypeScript/React GUI..."
+    log_info "This will start both the backend API and the GUI"
     echo
     
-    # Check if webview is available
-    if ! python -c "import webview" 2>/dev/null; then
-        log_warning "Native desktop support (webview) not installed"
-        log_info "For the best desktop experience, run: ./desktop/setup_desktop.sh"
-        log_info "This will install system dependencies and webview properly"
-        echo
-        log_info "Attempting automatic webview installation..."
-        
-        if python desktop/desktop_app.py --install-webview; then
-            log_success "Webview installed successfully"
-        else
-            log_warning "Automatic installation failed"
-            log_info "Please run: ./desktop/setup_desktop.sh for proper setup"
-        fi
+    # Start API server in background
+    log_info "Starting backend API server..."
+    uvicorn api.main:app --host "$HOST" --port "$PORT" --reload &
+    API_PID=$!
+    
+    # Wait for API to be ready
+    sleep 3
+    
+    # Start the GUI
+    log_info "Starting GUI application..."
+    cd shepherd-gui
+    
+    # Check if dependencies are installed
+    if [ ! -d "node_modules" ]; then
+        log_info "Installing GUI dependencies..."
+        npm install
     fi
     
-    # Try native desktop first, then fall back to Chrome app mode
-    if python desktop/desktop_app.py 2>/dev/null; then
-        log_success "Native desktop application started successfully"
+    # Start GUI in development mode
+    if npm run tauri:dev; then
+        log_success "GUI application started successfully"
     else
-        log_warning "Native webview failed, using Chrome app mode"
-        if python desktop/app_mode.py; then
-            log_success "Chrome app mode started successfully"
+        log_warning "Tauri desktop app failed, trying web version..."
+        if npm run dev; then
+            log_success "Web GUI started successfully"
+            log_info "Open your browser to http://localhost:3000"
         else
-            log_error "Failed to start desktop application"
+            log_error "Failed to start GUI application"
+            kill $API_PID 2>/dev/null || true
             exit 1
         fi
     fi
+    
+    # Clean up background processes
+    kill $API_PID 2>/dev/null || true
 }
 
 # Start CLI mode
@@ -461,20 +466,18 @@ main() {
     echo
     
     case "$MODE" in
-        "web")
-            start_web
+        "api")
+            start_api
             ;;
-        "desktop")
-            start_desktop
-            ;;
-        "native_app")
-            start_native_app
+        "gui")
+            start_gui
             ;;
         "cli")
             start_cli
             ;;
         *)
             log_error "Unknown mode: $MODE"
+            show_help
             exit 1
             ;;
     esac

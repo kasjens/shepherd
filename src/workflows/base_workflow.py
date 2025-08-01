@@ -8,8 +8,9 @@ import uuid
 
 
 class BaseWorkflow(ABC):
-    def __init__(self, analysis: PromptAnalysis):
+    def __init__(self, analysis: PromptAnalysis, original_request: str = ""):
         self.analysis = analysis
+        self.original_request = original_request
         self.workflow_id = str(uuid.uuid4())
         self.agents: List[BaseAgent] = []
         self.steps: List[ExecutionStep] = []

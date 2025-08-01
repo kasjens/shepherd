@@ -12,7 +12,7 @@ class WorkflowSelector:
             WorkflowPattern.PARALLEL: ParallelWorkflow,
         }
     
-    def select_workflow(self, analysis: PromptAnalysis) -> BaseWorkflow:
+    def select_workflow(self, analysis: PromptAnalysis, original_request: str = "") -> BaseWorkflow:
         pattern = analysis.recommended_pattern
         
         if pattern in self.workflow_registry:
@@ -20,7 +20,7 @@ class WorkflowSelector:
         else:
             workflow_class = self.workflow_registry[WorkflowPattern.SEQUENTIAL]
         
-        return workflow_class(analysis)
+        return workflow_class(analysis, original_request)
     
     def get_workflow_config(self, pattern: WorkflowPattern) -> Dict[str, Any]:
         configs = {

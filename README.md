@@ -13,7 +13,7 @@ Shepherd is an intelligent multi-agent system that automatically determines the 
 - 🧠 **Intelligent Prompt Analysis** - Automatically analyzes complexity, urgency, and task requirements
 - 🔀 **Dynamic Workflow Selection** - Chooses optimal patterns (Sequential, Parallel, Conditional, etc.)
 - 🤖 **Multi-Agent Orchestration** - Creates and coordinates specialized AI agents
-- 🖥️ **Multiple Interfaces** - Web UI, desktop app, and command-line modes
+- 🖥️ **Multiple Interfaces** - Professional desktop GUI, API backend, and command-line modes
 - 🛡️ **Safety-First Design** - Built-in validation and error handling
 - 🚀 **Local LLM Support** - Works with Ollama for privacy-focused AI
 
@@ -32,25 +32,39 @@ cd shepherd
 
 The installation script will:
 - Install Python 3.9+ and system dependencies
+- Install Node.js 18+ and npm for the GUI
+- Install Rust toolchain for desktop builds
 - Create a virtual environment
 - Install all Python packages
+- Install GUI dependencies (TypeScript/React)
 - Install and configure Ollama (local LLM)
 - Download default AI models
 - Set up environment configuration
 
 ### 2. Running the Application
 
-#### Native Desktop App (Recommended)
+#### Professional Desktop GUI (Recommended)
 ```bash
-./scripts/start.sh --native-app
+./scripts/start.sh --gui
 ```
-Opens Shepherd as a true desktop application (Chrome app mode or native webview).
+Launches the modern TypeScript/React desktop application with Tauri.
 
-#### Web Interface
+#### API Backend Server
 ```bash
-./scripts/start.sh
+./scripts/start.sh --api
 ```
-Starts a web server accessible at http://localhost:7860
+Starts the FastAPI backend server at http://localhost:8000
+
+#### Manual GUI Development
+```bash
+# Terminal 1: Start backend
+./scripts/start.sh --api
+
+# Terminal 2: Start GUI
+cd shepherd-gui && npm run tauri:dev  # Desktop app
+# OR
+cd shepherd-gui && npm run dev        # Web version at localhost:3000
+```
 
 #### Command Line Interface
 ```bash
@@ -111,7 +125,7 @@ The system executes the workflow with:
 
 ```
 shepherd/
-├── src/                          # Source code  
+├── src/                          # Python source code  
 │   ├── core/                     # Core orchestration logic
 │   │   ├── models.py            # Data models and enums
 │   │   ├── prompt_analyzer.py   # Natural language analysis
@@ -120,6 +134,7 @@ shepherd/
 │   ├── agents/                   # AI agent system
 │   │   ├── base_agent.py         # Agent base class
 │   │   ├── task_agent.py         # Specialized task agents
+│   │   ├── system_agent.py       # System operations agent
 │   │   └── agent_factory.py      # Agent creation logic
 │   ├── workflows/                # Workflow implementations
 │   │   ├── base_workflow.py      # Workflow base class
@@ -127,21 +142,30 @@ shepherd/
 │   │   └── parallel_workflow.py   # Parallel execution
 │   └── utils/                    # Utilities and logging
 │       └── logger.py            # Comprehensive logging system
+├── shepherd-gui/                 # Modern TypeScript GUI
+│   ├── src/                     # React/Next.js source
+│   │   ├── app/                 # Next.js app router
+│   │   ├── components/          # React components
+│   │   ├── lib/                 # Utilities and stores
+│   │   └── types/               # TypeScript definitions
+│   ├── src-tauri/               # Tauri desktop integration
+│   ├── package.json             # Node.js dependencies
+│   └── tailwind.config.js       # Styling configuration
 ├── scripts/                      # Installation and startup scripts
 │   ├── install.sh               # Comprehensive installation
-│   └── start.sh                 # Smart multi-mode launcher
-├── desktop/                      # Desktop application launchers
-│   ├── desktop_app.py           # Native webview desktop app
-│   ├── app_mode.py             # Chrome app mode launcher
-│   └── setup_desktop.sh        # Desktop dependencies installer
+│   └── start.sh                 # Multi-mode launcher (API/GUI/CLI)
 ├── tools/                        # Development and analysis tools
 │   ├── analyze_logs.py          # Log analysis and troubleshooting
 │   └── test_app_mode.py         # Desktop compatibility tester
+├── docs/                         # Documentation
+│   ├── GUI_LAYOUT.md            # GUI design specification
+│   ├── PROPOSED_GUI_APPROACH.md # Architecture decision
+│   └── intelligent_orchestrator_context.md # Core concepts
 ├── logs/                         # Application logs (auto-created)
-├── app.py                        # Gradio web interface
 ├── main.py                       # CLI entry point
 ├── requirements.txt              # Python dependencies
-└── SCRIPTS.md                    # Scripts documentation
+├── CLAUDE.md                     # Guidance for Claude Code
+└── MIGRATION_GUIDE.md            # GUI migration documentation
 ```
 
 ## Architecture Deep Dive
@@ -193,9 +217,13 @@ OLLAMA_MODEL_GENERAL=llama3.1:8b
 OLLAMA_MODEL_CODE=codellama:7b
 OLLAMA_MODEL_ANALYSIS=mistral:7b
 
+# API Configuration
+SHEPHERD_API_HOST=0.0.0.0
+SHEPHERD_API_PORT=8000
+
 # Safety Configuration
 MAX_EXECUTION_TIME=300
-SANDBOX_MODE=True
+SANDBO_MODE=True
 ```
 
 ### Ollama Models
@@ -257,22 +285,40 @@ class CustomAgent(BaseAgent):
 
 ## Development
 
-### Running Tests
+### Python Backend Development
 ```bash
+# Activate environment
 source venv/bin/activate
+
+# Run tests
 pytest
-```
 
-### Code Formatting
-```bash
-source venv/bin/activate
+# Code formatting
 black src/ tests/
+
+# Type checking
+mypy src/
 ```
 
-### Type Checking
+### GUI Development
 ```bash
-source venv/bin/activate
-mypy src/
+# Enter GUI directory
+cd shepherd-gui
+
+# Install dependencies
+npm install
+
+# Development server (web)
+npm run dev
+
+# Development server (desktop)
+npm run tauri:dev
+
+# Build for production
+npm run build
+
+# Desktop app build
+npm run tauri:build
 ```
 
 ## Logging & Troubleshooting
@@ -318,16 +364,16 @@ Use the built-in log analyzer for troubleshooting:
 - Simple workflow pattern detection (Sequential & Parallel)
 - Sequential and parallel workflow execution
 - Basic agent creation and task assignment
-- Gradio web interface
-- Desktop app mode
-- Comprehensive installation system
-- **Advanced logging system with rotation and analysis tools**
+- **Professional TypeScript/React GUI with Tauri desktop support**
+- **Modern installation system with Node.js and Rust support**
+- Advanced logging system with rotation and analysis tools
+- System task execution with real performance analysis
 
-### 🚧 Phase 2 (Next Steps)
+### 🚧 Phase 2 (In Progress)
+- **FastAPI backend implementation for GUI communication**
+- **WebSocket real-time updates**
 - Interactive confirmation system
 - Risk assessment and validation
-- Backup and rollback capabilities
-- Real-time execution monitoring
 - Enhanced error handling and recovery
 
 ### 🔮 Future Phases
@@ -365,8 +411,23 @@ ollama serve
 # Activate virtual environment
 source venv/bin/activate
 
-# Verify installation
-python -c "import gradio, crewai, pydantic; print('All imports successful')"
+# Verify Python dependencies
+python -c "import fastapi, uvicorn, crewai, pydantic; print('All imports successful')"
+
+# Verify GUI dependencies
+cd shepherd-gui && npm list
+```
+
+**GUI Issues**
+```bash
+# Check Node.js version (requires 18+)
+node --version
+
+# Check Rust installation (for desktop builds)
+rustc --version
+
+# Reinstall GUI dependencies
+cd shepherd-gui && rm -rf node_modules && npm install
 ```
 
 ### Getting Help
@@ -389,12 +450,24 @@ python -c "import gradio, crewai, pydantic; print('All imports successful')"
 
 [Add your license information here]
 
+## Technology Stack
+
+### Backend
+- [CrewAI](https://github.com/joaomdmoura/crewAI) for multi-agent orchestration
+- [FastAPI](https://fastapi.tiangolo.com/) for API backend
+- [Ollama](https://ollama.com/) for local LLM support
+- [Pydantic](https://pydantic.dev/) for data validation
+
+### Frontend
+- [Next.js 15](https://nextjs.org/) with App Router
+- [TypeScript](https://www.typescriptlang.org/) for type safety
+- [Tailwind CSS](https://tailwindcss.com/) for styling
+- [Tauri](https://tauri.app/) for cross-platform desktop apps
+- [Zustand](https://zustand-demo.pmnd.rs/) for state management
+
 ## Acknowledgments
 
-- Built with [CrewAI](https://github.com/joaomdmoura/crewAI) for multi-agent orchestration
-- [Gradio](https://gradio.app/) for the web interface
-- [Ollama](https://ollama.com/) for local LLM support
-- Inspired by the need for intelligent workflow automation
+Inspired by the need for intelligent workflow automation with modern, professional interfaces.
 
 ---
 

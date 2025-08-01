@@ -4,22 +4,24 @@ from typing import List, Dict, Any, Tuple
 from .base_workflow import BaseWorkflow
 from ..core.models import ExecutionStep, ExecutionStatus, WorkflowResult
 from ..agents.base_agent import BaseAgent
-from ..agents.task_agent import TaskAgent
+from ..agents.agent_factory import AgentFactory
 
 
 class ParallelWorkflow(BaseWorkflow):
-    def __init__(self, analysis):
-        super().__init__(analysis)
+    def __init__(self, analysis, original_request: str = ""):
+        super().__init__(analysis, original_request)
         self.max_workers = min(len(analysis.task_types), 5)
+        self.agent_factory = AgentFactory()
     
     def create_agents(self) -> List[BaseAgent]:
         agents = []
         
         for i, task_type in enumerate(self.analysis.task_types):
-            agent = TaskAgent(
-                name=f"ParallelAgent_{i}_{task_type}",
+            agent = self.agent_factory.create_agent(
                 task_type=task_type,
-                complexity=self.analysis.complexity_score
+                name=f"ParallelAgent_{i}_{task_type}",
+                complexity=self.analysis.complexity_score,
+                request_text=self.original_request
             )
             agents.append(agent)
         
@@ -98,7 +100,9 @@ class ParallelWorkflow(BaseWorkflow):
         start_time = time.time()
         self.log_progress(f"Starting execution of {step.id}")
         
-        result = agent.execute_task(step.description)
+        # Pass the original request for better context
+        task_with_context = f"{self.original_request} - {step.description}" if self.original_request else step.description
+        result = agent.execute_task(task_with_context)
         
         execution_time = time.time() - start_time
         return result, execution_time

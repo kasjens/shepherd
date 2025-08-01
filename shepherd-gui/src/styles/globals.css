@@ -1,0 +1,170 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* CSS Variables for Theme System */
+@layer base {
+  :root {
+    /* Light Theme (Terminal Day) */
+    --background: 255 255 255; /* #ffffff */
+    --foreground: 33 37 41; /* #212529 */
+    --card: 255 255 255; /* #ffffff */
+    --card-foreground: 33 37 41; /* #212529 */
+    --primary: 9 105 218; /* #0969da */
+    --primary-foreground: 255 255 255; /* #ffffff */
+    --secondary: 248 249 250; /* #f8f9fa */
+    --secondary-foreground: 33 37 41; /* #212529 */
+    --muted: 248 249 250; /* #f8f9fa */
+    --muted-foreground: 108 117 125; /* #6c757d */
+    --accent: 233 236 239; /* #e9ecef */
+    --accent-foreground: 33 37 41; /* #212529 */
+    --border: 233 236 239; /* #e9ecef */
+    --input: 233 236 239; /* #e9ecef */
+    --ring: 9 105 218; /* #0969da */
+    
+    /* Custom terminal colors */
+    --terminal-black: 26 29 33; /* #1a1d21 */
+    --command-gray: 44 49 54; /* #2c3136 */
+    --border-gray: 73 80 87; /* #495057 */
+    --prompt-white: 248 249 250; /* #f8f9fa */
+    --muted-gray: 173 181 189; /* #adb5bd */
+    --shepherd-blue: 9 105 218; /* #0969da */
+    --success-green: 45 164 78; /* #2da44e */
+    --warning-amber: 251 133 0; /* #fb8500 */
+    --error-red: 207 34 46; /* #cf222e */
+  }
+
+  .dark {
+    /* Dark Theme (Terminal Night) */
+    --background: 26 29 33; /* #1a1d21 */
+    --foreground: 248 249 250; /* #f8f9fa */
+    --card: 33 37 41; /* #212529 */
+    --card-foreground: 248 249 250; /* #f8f9fa */
+    --primary: 9 105 218; /* #0969da */
+    --primary-foreground: 255 255 255; /* #ffffff */
+    --secondary: 44 49 54; /* #2c3136 */
+    --secondary-foreground: 248 249 250; /* #f8f9fa */
+    --muted: 44 49 54; /* #2c3136 */
+    --muted-foreground: 173 181 189; /* #adb5bd */
+    --accent: 73 80 87; /* #495057 */
+    --accent-foreground: 248 249 250; /* #f8f9fa */
+    --border: 73 80 87; /* #495057 */
+    --input: 44 49 54; /* #2c3136 */
+    --ring: 61 139 253; /* #3d8bfd */
+  }
+
+  .theme-blue {
+    /* Blue Theme (Guided Mode) */
+    --background: 240 247 255; /* #f0f7ff */
+    --foreground: 10 48 105; /* #0a3069 */
+    --card: 224 239 255; /* #e0efff */
+    --card-foreground: 10 48 105; /* #0a3069 */
+    --primary: 9 105 218; /* #0969da */
+    --primary-foreground: 255 255 255; /* #ffffff */
+    --secondary: 224 239 255; /* #e0efff */
+    --secondary-foreground: 9 105 218; /* #0969da */
+    --muted: 194 223 255; /* #c2dfff */
+    --muted-foreground: 9 105 218; /* #0969da */
+    --accent: 184 211 240; /* #b8d3f0 */
+    --accent-foreground: 10 48 105; /* #0a3069 */
+    --border: 184 211 240; /* #b8d3f0 */
+    --input: 240 247 255; /* #f0f7ff */
+    --ring: 9 105 218; /* #0969da */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-background text-foreground font-sans;
+    overflow: hidden; /* Prevent body scroll */
+  }
+
+  /* Custom scrollbars */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgb(var(--muted-gray));
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgb(var(--border-gray));
+  }
+}
+
+/* Terminal-inspired components */
+@layer components {
+  .terminal-window {
+    @apply bg-terminal-black text-prompt-white font-mono text-sm;
+  }
+
+  .terminal-prompt {
+    @apply text-success-green;
+  }
+
+  .message-user {
+    @apply bg-blue-50 border-l-4 border-shepherd-blue;
+  }
+
+  .message-ai {
+    @apply bg-gray-50 border-l-4 border-gray-300;
+  }
+
+  .dark .message-user {
+    @apply bg-blue-900/20 border-l-4 border-shepherd-blue;
+  }
+
+  .dark .message-ai {
+    @apply bg-gray-800/20 border-l-4 border-gray-600;
+  }
+
+  .theme-blue .message-user {
+    @apply bg-blue-100 border-l-4 border-shepherd-blue;
+  }
+
+  .theme-blue .message-ai {
+    @apply bg-blue-50 border-l-4 border-blue-300;
+  }
+}
+
+/* Application layout utilities */
+@layer utilities {
+  .app-layout {
+    @apply h-screen flex overflow-hidden;
+  }
+
+  .sidebar-panel {
+    @apply w-80 min-w-[200px] max-w-[500px] bg-card border-r border-border flex flex-col;
+  }
+
+  .main-panel {
+    @apply flex-1 flex flex-col bg-background overflow-hidden;
+  }
+
+  .artifacts-panel {
+    @apply w-96 min-w-[250px] max-w-[600px] bg-card border-l border-border flex flex-col;
+  }
+
+  .resize-handle {
+    @apply absolute top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary/20 transition-colors;
+  }
+
+  .resize-handle-left {
+    @apply left-0 transform -translate-x-1/2;
+  }
+
+  .resize-handle-right {
+    @apply right-0 transform translate-x-1/2;
+  }
+}

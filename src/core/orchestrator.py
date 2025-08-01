@@ -20,9 +20,9 @@ class IntelligentOrchestrator:
         log_prompt_analysis(user_request, analysis)
         return analysis
     
-    def create_workflow(self, analysis: PromptAnalysis):
+    def create_workflow(self, analysis: PromptAnalysis, original_request: str = ""):
         self.logger.info(f"Creating workflow with pattern: {analysis.recommended_pattern.value}")
-        workflow = self.workflow_selector.select_workflow(analysis)
+        workflow = self.workflow_selector.select_workflow(analysis, original_request)
         self.logger.debug(f"Workflow created: {type(workflow).__name__}")
         return workflow
     
@@ -41,7 +41,7 @@ class IntelligentOrchestrator:
             print(f"Team Size Needed: {analysis.team_size_needed}")
             print(f"Confidence: {analysis.confidence:.2f}")
             
-            workflow = self.create_workflow(analysis)
+            workflow = self.create_workflow(analysis, user_request)
             log_workflow_start(workflow.workflow_id, analysis.recommended_pattern, analysis)
             
             print(f"\n=== Executing {analysis.recommended_pattern.value} Workflow ===")
@@ -59,7 +59,7 @@ class IntelligentOrchestrator:
     def execute_interactive(self, user_request: str, 
                           confirm_steps: bool = True) -> WorkflowResult:
         analysis = self.analyze_prompt(user_request)
-        workflow = self.create_workflow(analysis)
+        workflow = self.create_workflow(analysis, user_request)
         
         if confirm_steps:
             workflow.initialize()

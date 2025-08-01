@@ -131,6 +131,70 @@ install_python() {
     log_success "Python installed"
 }
 
+# Install Node.js and npm
+install_nodejs() {
+    log_info "Checking Node.js installation..."
+    
+    # Check if Node.js 18+ is already installed
+    if command_exists node; then
+        NODE_VERSION=$(node --version | cut -d'v' -f2 | cut -d'.' -f1)
+        if [ "$NODE_VERSION" -ge 18 ]; then
+            log_success "Node.js v$(node --version) already installed"
+            return
+        fi
+    fi
+    
+    log_info "Installing Node.js 18+ and npm..."
+    
+    case "$OS_ID" in
+        ubuntu|debian)
+            # Install NodeSource repository for latest Node.js
+            curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+            sudo apt install -y nodejs
+            ;;
+        rhel|centos|fedora|rocky|almalinux)
+            # Install NodeSource repository for latest Node.js
+            curl -fsSL https://rpm.nodesource.com/setup_18.x | sudo bash -
+            if command_exists dnf; then
+                sudo dnf install -y nodejs npm
+            else
+                sudo yum install -y nodejs npm
+            fi
+            ;;
+        *)
+            log_error "Unsupported OS for automatic Node.js installation"
+            log_info "Please install Node.js 18+ manually from https://nodejs.org"
+            exit 1
+            ;;
+    esac
+    
+    log_success "Node.js and npm installed"
+}
+
+# Install Rust (for Tauri desktop builds)
+install_rust() {
+    log_info "Checking Rust installation..."
+    
+    if command_exists rustc && command_exists cargo; then
+        log_success "Rust already installed"
+        return
+    fi
+    
+    log_info "Installing Rust (required for desktop GUI)..."
+    
+    # Install Rust using rustup
+    if curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; then
+        # Source the cargo environment
+        source ~/.cargo/env
+        log_success "Rust installed successfully"
+    else
+        log_error "Failed to install Rust"
+        log_info "Desktop GUI will not be available without Rust"
+        log_info "You can install it manually later from https://rustup.rs"
+        return 1
+    fi
+}
+
 # Install system dependencies
 install_system_deps() {
     log_info "Installing system dependencies..."
@@ -143,7 +207,12 @@ install_system_deps() {
                 libffi-dev \
                 git \
                 curl \
-                wget
+                wget \
+                pkg-config \
+                libwebkit2gtk-4.1-dev \
+                libgtk-3-dev \
+                libayatana-appindicator3-dev \
+                librsvg2-dev
             ;;
         rhel|centos|fedora|rocky|almalinux)
             if command_exists dnf; then
@@ -153,7 +222,12 @@ install_system_deps() {
                     libffi-devel \
                     git \
                     curl \
-                    wget
+                    wget \
+                    pkgconf-pkg-config \
+                    webkit2gtk4.0-devel \
+                    gtk3-devel \
+                    libappindicator-gtk3-devel \
+                    librsvg2-devel
             else
                 sudo yum groupinstall -y "Development Tools"
                 sudo yum install -y \
@@ -161,7 +235,12 @@ install_system_deps() {
                     libffi-devel \
                     git \
                     curl \
-                    wget
+                    wget \
+                    pkgconfig \
+                    webkit2gtk3-devel \
+                    gtk3-devel \
+                    libappindicator-gtk3-devel \
+                    librsvg2-devel
             fi
             ;;
         *)
@@ -217,6 +296,31 @@ install_python_deps() {
     pip install -r requirements.txt
     
     log_success "Python dependencies installed"
+}
+
+# Install GUI dependencies
+install_gui_deps() {
+    log_info "Installing GUI dependencies..."
+    
+    if [ ! -d "shepherd-gui" ]; then
+        log_warning "GUI directory not found - skipping GUI setup"
+        log_info "GUI will need to be set up separately"
+        return
+    fi
+    
+    cd shepherd-gui
+    
+    # Install npm dependencies
+    if npm install; then
+        log_success "GUI dependencies installed"
+    else
+        log_error "Failed to install GUI dependencies"
+        log_info "You can install them later with: cd shepherd-gui && npm install"
+        cd ..
+        return 1
+    fi
+    
+    cd ..
 }
 
 # Install Ollama
@@ -336,10 +440,17 @@ import sys
 print(f'Python version: {sys.version}')
 
 try:
-    import gradio
-    print('✓ Gradio imported successfully')
+    import fastapi
+    print('✓ FastAPI imported successfully')
 except ImportError as e:
-    print(f'✗ Gradio import failed: {e}')
+    print(f'✗ FastAPI import failed: {e}')
+    sys.exit(1)
+
+try:
+    import uvicorn
+    print('✓ Uvicorn imported successfully')
+except ImportError as e:
+    print(f'✗ Uvicorn import failed: {e}')
     sys.exit(1)
 
 try:
@@ -355,6 +466,23 @@ print('✓ Core dependencies working')
     else
         log_error "Python dependencies test failed"
         return 1
+    fi
+    
+    # Test Node.js
+    if command_exists node && command_exists npm; then
+        NODE_VERSION=$(node --version)
+        NPM_VERSION=$(npm --version)
+        log_success "Node.js $NODE_VERSION and npm $NPM_VERSION available"
+    else
+        log_warning "Node.js/npm test failed - GUI may not work properly"
+    fi
+    
+    # Test Rust (optional for desktop builds)
+    if command_exists rustc && command_exists cargo; then
+        RUST_VERSION=$(rustc --version | cut -d' ' -f2)
+        log_success "Rust $RUST_VERSION available for desktop builds"
+    else
+        log_warning "Rust not available - desktop GUI builds will not work"
     fi
     
     # Test Ollama
@@ -377,20 +505,39 @@ print_usage() {
     echo "   source venv/bin/activate"
     echo
     echo "2. Run the application:"
-    echo "   # Web interface"
-    echo "   python main.py --dev"
+    echo "   # Start API backend (recommended)"
+    echo "   ./scripts/start.sh --api"
     echo
-    echo "   # Command line"
-    echo "   python main.py \"Your request here\""
+    echo "   # Launch desktop GUI"
+    echo "   ./scripts/start.sh --gui"
     echo
-    echo "3. If Ollama is not running, start it:"
+    echo "   # Command line interface"
+    echo "   ./scripts/start.sh --cli \"Your request here\""
+    echo
+    echo "3. For manual GUI setup:"
+    echo "   # Terminal 1: Start backend"
+    echo "   ./scripts/start.sh --api"
+    echo "   # Terminal 2: Start GUI"
+    echo "   cd shepherd-gui && npm run tauri:dev"
+    echo
+    echo "4. If Ollama is not running, start it:"
     echo "   ollama serve"
     echo
-    echo "4. Download additional models (optional):"
+    echo "5. Download additional models (optional):"
     echo "   ollama pull codellama:7b"
     echo "   ollama pull mistral:7b"
     echo
-    echo -e "${BLUE}Access the web interface at:${NC} http://localhost:7860"
+    echo -e "${BLUE}Professional GUI Features:${NC}"
+    echo "• Modern TypeScript/React interface"
+    echo "• Cross-platform desktop application"
+    echo "• Real-time WebSocket communication"
+    echo "• Multiple theme support"
+    echo "• Resizable panels and responsive design"
+    echo
+    echo -e "${BLUE}Access points:${NC}"
+    echo "• API Backend: http://localhost:8000"
+    echo "• API Documentation: http://localhost:8000/docs"
+    echo "• Web GUI: http://localhost:3000 (when running npm run dev)"
     echo
 }
 
@@ -407,9 +554,12 @@ main() {
     detect_os
     update_packages
     install_python
+    install_nodejs
+    install_rust
     install_system_deps
     setup_venv
     install_python_deps
+    install_gui_deps
     install_ollama
     download_model
     create_env_file

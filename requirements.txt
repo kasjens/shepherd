@@ -1,7 +1,10 @@
 # Core framework
 crewai>=0.1.0
 langchain>=0.1.0
-gradio>=4.0.0
+
+# Web API framework (for GUI backend)
+fastapi>=0.100.0
+uvicorn>=0.23.0
 
 # Local LLM support
 ollama>=0.1.0
@@ -15,6 +18,13 @@ pydantic>=2.0.0
 # Utilities
 python-dotenv>=1.0.0
 typing-extensions>=4.5.0
+psutil>=5.9.0
 
-# Optional: Native desktop support
-# pywebview[qt]>=4.0.0  # Uncomment for native desktop app support
+# WebSocket support for real-time GUI communication
+websockets>=11.0.0
+
+# CORS support for GUI backend integration
+python-multipart>=0.0.6
+
+# CORS middleware for FastAPI
+fastapi-cors>=0.0.6

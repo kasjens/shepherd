@@ -126,3 +126,42 @@ models/
 # Backup files
 *.bak
 *.backup
+
+# Next.js / React / Node.js (for shepherd-gui/)
+shepherd-gui/node_modules/
+shepherd-gui/.next/
+shepherd-gui/out/
+shepherd-gui/build/
+shepherd-gui/.turbo/
+shepherd-gui/next-env.d.ts
+
+# Tauri (for shepherd-gui/)
+shepherd-gui/src-tauri/target/
+shepherd-gui/src-tauri/Cargo.lock
+
+# Package manager lock files
+shepherd-gui/package-lock.json
+shepherd-gui/yarn.lock
+shepherd-gui/pnpm-lock.yaml
+
+# TypeScript build info
+shepherd-gui/.tsbuildinfo
+
+# ESLint cache
+shepherd-gui/.eslintcache
+
+# Storybook build outputs
+shepherd-gui/storybook-static/
+
+# Local environment variables for GUI
+shepherd-gui/.env
+shepherd-gui/.env.local
+shepherd-gui/.env.development.local
+shepherd-gui/.env.test.local
+shepherd-gui/.env.production.local
+
+# Editor directories and files (GUI specific)
+shepherd-gui/.vscode/
+shepherd-gui/.idea/
+
+.claude

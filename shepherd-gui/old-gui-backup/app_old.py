@@ -4,10 +4,41 @@ from src.core.models import ExecutionStatus
 from src.utils.logger import get_logger, log_user_interaction, log_system_info
 import json
 import sys
+from datetime import datetime
+from decimal import Decimal
 
 
 logger = get_logger('gradio_app')
 orchestrator = IntelligentOrchestrator()
+
+
+def safe_json_dumps(obj, indent=2):
+    """Safely serialize objects to JSON, handling non-serializable types."""
+    def json_serializer(obj):
+        """JSON serializer for objects not serializable by default json code"""
+        if isinstance(obj, (datetime,)):
+            return obj.isoformat()
+        elif isinstance(obj, Decimal):
+            return float(obj)
+        elif hasattr(obj, '__dict__'):
+            return obj.__dict__
+        elif hasattr(obj, '_asdict'):  # namedtuple
+            return obj._asdict()
+        else:
+            # For other non-serializable objects, convert to string
+            return str(obj)
+    
+    try:
+        return json.dumps(obj, indent=indent, default=json_serializer)
+    except Exception as e:
+        logger.warning(f"JSON serialization failed: {e}")
+        # Fallback: create a simple representation
+        return json.dumps({
+            "error": "Could not serialize output to JSON",
+            "message": str(e),
+            "output_type": str(type(obj)),
+            "output_str": str(obj)
+        }, indent=indent)
 
 
 def process_request(user_request: str, show_analysis: bool = True):
@@ -59,7 +90,7 @@ def process_request(user_request: str, show_analysis: bool = True):
 - Error: {step.error if step.error else 'None'}
 """
         
-        output_json = json.dumps(result.output, indent=2)
+        output_json = safe_json_dumps(result.output, indent=2)
         
         logger.info("Gradio request processed successfully")
         return analysis_text, execution_summary + steps_detail, output_json

@@ -1,6 +1,7 @@
 from typing import List, Dict, Any
 from .base_agent import BaseAgent
 from .task_agent import TaskAgent
+from .system_agent import SystemAgent
 from ..core.models import TaskType
 
 
@@ -15,15 +16,30 @@ class AgentFactory:
         }
     
     def create_agent(self, task_type: str, name: str = None, 
-                    complexity: float = 0.5) -> BaseAgent:
-        task_type_enum = TaskType[task_type.upper()] if isinstance(task_type, str) else task_type
+                    complexity: float = 0.5, **kwargs) -> BaseAgent:
+        # Check for specific system administration keywords
+        if isinstance(task_type, str):
+            task_lower = task_type.lower()
+            # Check if this should be a system agent based on keywords
+            system_keywords = ['server', 'performance', 'system', 'service', 'memory', 'disk', 'cpu', 'optimize']
+            request_text = kwargs.get('request_text', '').lower()
+            
+            if (any(keyword in task_lower for keyword in system_keywords) or
+                any(keyword in request_text for keyword in system_keywords)):
+                return SystemAgent(name=name or "SystemAgent", complexity=complexity)
         
-        if task_type_enum in self.agent_registry:
-            creator = self.agent_registry[task_type_enum]
-            return creator(name, complexity)
-        else:
-            return self._create_default_agent(name or f"Agent_{task_type}", 
-                                            task_type, complexity)
+        # Use enum-based creation for standard task types
+        try:
+            task_type_enum = TaskType[task_type.upper()] if isinstance(task_type, str) else task_type
+            
+            if task_type_enum in self.agent_registry:
+                creator = self.agent_registry[task_type_enum]
+                return creator(name, complexity)
+        except (KeyError, AttributeError):
+            pass
+        
+        return self._create_default_agent(name or f"Agent_{task_type}", 
+                                        task_type, complexity)
     
     def create_agents_for_tasks(self, task_types: List[str], 
                                complexity: float = 0.5) -> List[BaseAgent]:
