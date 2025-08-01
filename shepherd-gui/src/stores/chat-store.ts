@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { ChatSession, ChatMessage, Artifact, Theme } from '@/lib/types'
 import { api } from '@/lib/api'
+import { useProjectStore } from './project-store'
 
 interface ChatStore {
   // State
@@ -95,8 +96,11 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     }))
 
     try {
-      // Send to API
-      const result = await api.sendMessage(content, sessionId)
+      // Get project folder from project store
+      const { projectFolder } = useProjectStore.getState()
+      
+      // Send to API with project folder context
+      const result = await api.sendMessage(content, sessionId, projectFolder || undefined)
       
       // Create AI response
       const aiMessage: ChatMessage = {

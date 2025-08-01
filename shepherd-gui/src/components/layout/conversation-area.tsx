@@ -4,8 +4,9 @@ import { useState, useRef, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Card } from '@/components/ui/card'
-import { Send, Copy, RotateCw, Settings, Package, User, Bot } from 'lucide-react'
+import { Send, Copy, RotateCw, Settings, Package, User, Bot, Folder } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useProjectStore } from '@/stores/project-store'
 
 interface ConversationAreaProps {
   className?: string
@@ -21,6 +22,7 @@ interface Message {
 
 export function ConversationArea({ className }: ConversationAreaProps) {
   const [message, setMessage] = useState('')
+  const { projectFolder } = useProjectStore()
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -135,17 +137,22 @@ I'm working on implementing your request. This may take a moment while I analyze
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-lg font-semibold" style={{ color: 'var(--foreground)' }}>Server Performance Analysis</h1>
-            <p className="text-sm" style={{ color: 'var(--muted-gray)' }}>
-              Started 25 minutes ago • {messages.length} messages • 3 artifacts generated
-            </p>
+            <div className="flex items-center gap-3 text-sm" style={{ color: 'var(--muted-gray)' }}>
+              <span>Started 25 minutes ago • {messages.length} messages • 3 artifacts generated</span>
+              {projectFolder && (
+                <>
+                  <span>•</span>
+                  <div className="flex items-center gap-1">
+                    <Folder className="h-3 w-3" />
+                    <span title={projectFolder}>
+                      {projectFolder.split(/[/\\]/).slice(-2).join('/')}
+                    </span>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon">
-              <Copy className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon">
-              <RotateCw className="h-4 w-4" />
-            </Button>
             <Button variant="ghost" size="icon">
               <Settings className="h-4 w-4" />
             </Button>
@@ -166,7 +173,7 @@ I'm working on implementing your request. This may take a moment while I analyze
               ) : (
                 <>
                   <Bot className="h-4 w-4" />
-                  <span className="font-medium">🐑 Shepherd</span>
+                  <span className="font-medium">Shepherd</span>
                 </>
               )}
               <span className="text-muted-gray">• {formatTime(msg.timestamp)}</span>

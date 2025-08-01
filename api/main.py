@@ -71,6 +71,7 @@ manager = ConnectionManager()
 class WorkflowRequest(BaseModel):
     request: str
     show_analysis: bool = True
+    project_folder: Optional[str] = None
 
 class WorkflowResponse(BaseModel):
     success: bool
@@ -141,8 +142,8 @@ async def execute_workflow(request: WorkflowRequest):
                 "timestamp": datetime.now().isoformat()
             }))
         
-        # Execute the workflow
-        result = orchestrator.execute_request(request.request)
+        # Execute the workflow with project folder context
+        result = orchestrator.execute_request(request.request, project_folder=request.project_folder)
         
         # Broadcast completion
         await manager.broadcast(json.dumps({

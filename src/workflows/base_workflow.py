@@ -16,8 +16,19 @@ class BaseWorkflow(ABC):
         self.steps: List[ExecutionStep] = []
         self.start_time = None
         self.end_time = None
+        self.project_folder: Optional[str] = None
         self.logger = get_logger(f'workflow.{self.__class__.__name__}')
         self.logger.debug(f"Workflow initialized: {self.workflow_id}")
+    
+    def set_project_folder(self, project_folder: str):
+        """Set the project folder context for this workflow"""
+        self.project_folder = project_folder
+        self.logger.info(f"Project folder set: {project_folder}")
+        
+        # Pass project folder to all agents
+        for agent in self.agents:
+            if hasattr(agent, 'set_project_folder'):
+                agent.set_project_folder(project_folder)
     
     @abstractmethod
     def create_agents(self) -> List[BaseAgent]:

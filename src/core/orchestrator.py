@@ -26,8 +26,10 @@ class IntelligentOrchestrator:
         self.logger.debug(f"Workflow created: {type(workflow).__name__}")
         return workflow
     
-    def execute_request(self, user_request: str) -> WorkflowResult:
+    def execute_request(self, user_request: str, project_folder: Optional[str] = None) -> WorkflowResult:
         self.logger.info(f"Starting request execution: {user_request[:50]}...")
+        if project_folder:
+            self.logger.info(f"Project folder context: {project_folder}")
         
         try:
             analysis = self.analyze_prompt(user_request)
@@ -40,8 +42,15 @@ class IntelligentOrchestrator:
             print(f"Recommended Pattern: {analysis.recommended_pattern.value}")
             print(f"Team Size Needed: {analysis.team_size_needed}")
             print(f"Confidence: {analysis.confidence:.2f}")
+            if project_folder:
+                print(f"Project Folder: {project_folder}")
             
             workflow = self.create_workflow(analysis, user_request)
+            
+            # Set project folder context for the workflow
+            if project_folder and hasattr(workflow, 'set_project_folder'):
+                workflow.set_project_folder(project_folder)
+            
             log_workflow_start(workflow.workflow_id, analysis.recommended_pattern, analysis)
             
             print(f"\n=== Executing {analysis.recommended_pattern.value} Workflow ===")

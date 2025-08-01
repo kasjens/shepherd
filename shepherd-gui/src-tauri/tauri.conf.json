@@ -26,6 +26,15 @@
       "csp": null
     }
   },
+  "plugins": {
+    "dialog": {
+      "open": true,
+      "save": false,
+      "message": false,
+      "ask": false,
+      "confirm": false
+    }
+  },
   "bundle": {
     "active": true,
     "targets": "all",

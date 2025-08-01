@@ -14,8 +14,14 @@ class BaseAgent(ABC):
         self.goal = goal
         self.backstory = backstory or f"A specialized agent focused on {role}"
         self.crew_agent = None
+        self.project_folder: Optional[str] = None
         self.logger = get_logger(f'agent.{name}')
         self.logger.debug(f"Agent created: {name} ({role})")
+    
+    def set_project_folder(self, project_folder: str):
+        """Set the project folder context for this agent"""
+        self.project_folder = project_folder
+        self.logger.info(f"Project folder set for {self.name}: {project_folder}")
     
     @abstractmethod
     def create_crew_agent(self) -> Agent:
