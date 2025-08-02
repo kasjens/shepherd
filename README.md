@@ -160,10 +160,15 @@ shepherd/
 ├── tools/                        # Development and analysis tools
 │   ├── analyze_logs.py          # Log analysis and troubleshooting
 │   └── test_app_mode.py         # Desktop compatibility tester
+├── tests/                        # Test infrastructure (Phase 1)
+│   ├── test_infrastructure.py   # 32 infrastructure validation tests
+│   ├── conftest.py              # pytest configuration and fixtures
+│   └── fixtures/                # Mock agents and sample data
 ├── docs/                         # Documentation
 │   ├── GUI_LAYOUT.md            # GUI design specification
 │   ├── PROPOSED_GUI_APPROACH.md # Architecture decision
-│   └── intelligent_orchestrator_context.md # Core concepts
+│   ├── IMPLEMENTATION_PLAN.md   # Phase-based development plan
+│   └── PHASE1_COMPLETION_REPORT.md # Test infrastructure results
 ├── logs/                         # Application logs (auto-created)
 ├── main.py                       # CLI entry point
 ├── requirements.txt              # Python dependencies
@@ -226,7 +231,7 @@ SHEPHERD_API_PORT=8000
 
 # Safety Configuration
 MAX_EXECUTION_TIME=300
-SANDBO_MODE=True
+SANDBOX_MODE=True
 ```
 
 ### Ollama Models
@@ -288,13 +293,28 @@ class CustomAgent(BaseAgent):
 
 ## Development
 
+### Testing
+```bash
+# Run all tests (backend + frontend)
+./scripts/run_tests.sh
+
+# Run specific test suites
+./scripts/run_tests.sh --backend-only      # Python tests only
+./scripts/run_tests.sh --frontend-only     # TypeScript tests only
+./scripts/run_tests.sh --coverage          # Generate coverage reports
+
+# Run individual tests
+pytest tests/test_infrastructure.py::TestMockAgents::test_mock_task_agent_creation -v
+cd shepherd-gui && npm test -- --testNamePattern="ProjectFolderSelector"
+```
+
 ### Python Backend Development
 ```bash
 # Activate environment
 source venv/bin/activate
 
-# Run tests
-pytest
+# Run tests (32 infrastructure tests available)
+pytest tests/test_infrastructure.py
 
 # Code formatting
 black src/ tests/
@@ -316,6 +336,9 @@ npm run dev
 
 # Development server (desktop)
 npm run tauri:dev
+
+# Run tests (7 component tests available)
+npm test
 
 # Build for production
 npm run build
@@ -360,9 +383,13 @@ Use the built-in log analyzer for troubleshooting:
 - **System Events**: Startup, configuration, resource usage
 - **Errors**: Full stack traces, context information, recovery attempts
 
-## Current Status: Phase 1 MVP
+## Current Status: Phase 1 Complete
 
-### ✅ Completed Features
+### ✅ Phase 1 Completed: Test Infrastructure
+- **Comprehensive test infrastructure** with 32 backend tests and 7 frontend tests
+- **Mock agent system** for isolated testing with configurable behavior
+- **Test automation** with `./scripts/run_tests.sh` supporting multiple test modes
+- **Coverage tracking** with HTML reports and 70% minimum threshold
 - Basic prompt analysis engine with natural language processing
 - Simple workflow pattern detection (Sequential & Parallel)
 - Sequential and parallel workflow execution
@@ -374,11 +401,12 @@ Use the built-in log analyzer for troubleshooting:
 - System task execution with real performance analysis (SystemAgent)
 - **Three-panel responsive GUI with resizable panels and themes**
 
-### 🚧 Phase 2 (In Progress)
+### 🚧 Phase 2: Memory System Foundation
+- Agent collaboration and shared memory systems
+- Context sharing between agents
+- Learning and adaptation mechanisms
 - Interactive confirmation system for high-risk operations
 - Risk assessment and validation
-- Enhanced error handling and recovery
-- Advanced workflow patterns (Conditional, Iterative)
 
 ### 🔮 Future Phases
 - **Phase 3**: Advanced workflow patterns (Conditional, Iterative, Hierarchical)
@@ -446,9 +474,11 @@ cd shepherd-gui && rm -rf node_modules && npm install
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Add tests for new functionality
-5. Run the test suite and linting
-6. Submit a pull request
+4. Add tests for new functionality (use the comprehensive test infrastructure)
+5. Run the test suite: `./scripts/run_tests.sh --coverage`
+6. Ensure all tests pass (currently 32 backend + 7 frontend tests)
+7. Run linting: `black src/ tests/` and `cd shepherd-gui && npm run lint`
+8. Submit a pull request
 
 ## License
 

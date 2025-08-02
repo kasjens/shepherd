@@ -38,6 +38,7 @@ npm run dev                             # Start Next.js dev server
 npm run tauri:dev                       # Start desktop app in dev mode
 npm run build                           # Build for production
 npm run tauri:build                     # Build desktop app
+npm run lint                            # Run ESLint checks
 
 # Log Analysis (Essential for debugging)
 ./tools/analyze_logs.py --all           # Complete log analysis
@@ -74,6 +75,30 @@ The agent system uses a factory pattern with specialized agents:
 - **CLI Interface** (`main.py`): Command-line execution with interactive confirmation
 
 ## Critical Implementation Details
+
+### Test Infrastructure (Phase 1 Complete)
+The project has comprehensive test infrastructure for test-driven development:
+
+**Backend Testing (`tests/`)**:
+- `test_infrastructure.py`: 32 tests validating mock system, fixtures, and async support
+- `conftest.py`: Pytest configuration with 15+ reusable fixtures
+- `fixtures/mock_agents.py`: Complete mock agent implementations (TaskAgent, SystemAgent, etc.)
+- `fixtures/sample_data.py`: Sample prompts, contexts, and workflow data
+- Mock communication system for agent collaboration testing
+
+**Frontend Testing (`shepherd-gui/__tests__/`)**:
+- Jest + React Testing Library with Next.js 15 support
+- Component tests for UI elements and feature components  
+- Tauri API mocking using virtual modules
+- Zustand store testing with configurable mock states
+- Coverage threshold: 70% minimum
+
+**Key Testing Features**:
+- Mock agents with configurable failure modes and execution delays
+- Async test infrastructure with proper event loop handling
+- Performance tracking utilities for benchmarking
+- Context-aware sample data generation
+- Full integration scenarios testing
 
 ### Logging System
 Shepherd uses a comprehensive logging system with multiple output formats:
@@ -121,6 +146,26 @@ The old Gradio interface has been deprecated in favor of this modern architectur
 2. Register agent type in `AgentFactory.create_agent()`
 3. Add task type mapping in prompt analysis if needed
 
+### Testing Commands
+```bash
+# Run all tests (backend + frontend)
+./scripts/run_tests.sh
+
+# Run specific test suites
+./scripts/run_tests.sh --backend-only        # Python tests only
+./scripts/run_tests.sh --frontend-only       # TypeScript tests only
+./scripts/run_tests.sh --unit                # Unit tests only
+./scripts/run_tests.sh --coverage            # Generate coverage reports
+
+# Run single tests
+pytest tests/test_infrastructure.py::TestMockAgents::test_mock_task_agent_creation -v
+cd shepherd-gui && npm test -- --testNamePattern="ProjectFolderSelector"
+
+# Test infrastructure validation
+pytest tests/test_infrastructure.py          # 32 infrastructure tests
+cd shepherd-gui && npm test                  # Component tests
+```
+
 ### Debugging Execution Issues
 1. **Check logs first**: `./tools/analyze_logs.py --all`
 2. **Verify Python environment**: `source venv/bin/activate` and `python -c "import fastapi, crewai, pydantic"`
@@ -136,6 +181,14 @@ The new architecture separates concerns between the Python backend and TypeScrip
 - **Frontend**: TypeScript GUI consuming API endpoints with real-time WebSocket updates
 - **Data Transfer**: JSON serialization with proper handling of Python objects
 - **Error Handling**: Comprehensive error responses with structured error information
+
+### API Endpoints
+```
+POST /api/workflow/execute     # Execute workflow with natural language prompt
+GET  /health                   # Health check endpoint
+WS   /ws                       # WebSocket for real-time execution updates
+GET  /api/status               # System status and Ollama availability
+```
 
 ## Technology Dependencies
 
@@ -203,10 +256,19 @@ shepherd/
 └── requirements.txt              # Python dependencies
 ```
 
+### Testing Strategy
+- **Backend**: pytest with 32 infrastructure tests, comprehensive mock system for agents and workflows
+- **Frontend**: Jest/React Testing Library with 7 component tests, Tauri API mocking
+- **Code Quality**: black (Python formatting), mypy (type checking), ESLint (TypeScript)
+- **Test Infrastructure**: Mock agents, sample data fixtures, async testing support
+- **Test Directories**: `tests/` (Python), `shepherd-gui/__tests__/` (TypeScript)
+- **Coverage**: HTML reports with 70% minimum threshold for frontend
+
 ### Components To Be Implemented
 - Advanced workflow patterns (Conditional, Iterative, Hierarchical)
 - WebSocket real-time communication implementation (backend integration complete)
 - Interactive confirmation system for high-risk operations
+- Phase 2: Memory System Foundation (agent collaboration and shared context)
 
 ### Current Implementation Status
 **✅ Working Components:**
@@ -217,6 +279,7 @@ shepherd/
 - **FastAPI backend (`api/main.py`) with REST and WebSocket support**
 - **Professional TypeScript GUI (`shepherd-gui/`) with Tauri desktop integration**
 - **Three-panel resizable layout with theme system**
+- **Comprehensive test infrastructure (Phase 1 complete: 32 backend + 7 frontend tests)**
 - Comprehensive logging system
 - Installation and startup scripts
 
@@ -229,6 +292,8 @@ shepherd/
 - Workflow patterns are implemented as classes inheriting from `BaseWorkflow`
 - The system supports both real system operations (SystemAgent) and LLM-based tasks (TaskAgent)
 - All execution is logged comprehensively with structured metadata
+- **Test-driven development**: Comprehensive mock system enables isolated testing of all components
+- **Phase-based implementation**: Currently in Phase 1 (Test Infrastructure) - see `docs/IMPLEMENTATION_PLAN.md`
 
 ## Project Documentation Context
 
@@ -254,6 +319,8 @@ The **intelligent_orchestrator_context.md** provides the core development philos
 - **Intelligent Workflow AI**: System that analyzes natural language, selects optimal patterns (Sequential, Parallel, Conditional, etc.), creates specialized agents, and orchestrates execution with safety checks.
 
 - **Multi-Agent Architecture**: Dynamic agent creation based on task requirements (Research, Technical, Creative, Security, Monitoring agents).
+
+- **Mock Development Support**: Frontend includes mock responses in `shepherd-gui/src/lib/mock-data.ts` for development without backend.
 
 - **Safety-First Design**: Interactive confirmation, risk assessment, backup/rollback capabilities, and command validation.
 

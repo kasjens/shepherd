@@ -129,7 +129,7 @@ check_python_deps() {
     log_step "Checking Python dependencies..."
     
     # Test critical imports
-    if ! python -c "
+    if python -c "
 import sys
 missing_deps = []
 

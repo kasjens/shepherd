@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { FolderOpen, Folder, X } from 'lucide-react'
 import { useProjectStore } from '@/stores/project-store'
+import { isTauri } from '@/lib/tauri'
 
 export function ProjectFolderSelector() {
   const { projectFolder, setProjectFolder, clearProjectFolder } = useProjectStore()
@@ -13,43 +14,51 @@ export function ProjectFolderSelector() {
     setIsSelecting(true)
     
     try {
-      // Check if we're in a Tauri environment
-      if (typeof window !== 'undefined' && (window as any).__TAURI_API__) {
-        const { open } = await import('@tauri-apps/api/dialog')
-        
-        const selected = await open({
-          directory: true,
-          multiple: false,
-          title: 'Select Project Folder',
-        })
-        
-        if (selected && typeof selected === 'string') {
-          setProjectFolder(selected)
+      // Try Tauri first
+      if (isTauri()) {
+        try {
+          // Dynamic import with string literal to prevent webpack analysis
+          const dialogModule = await import(/* webpackIgnore: true */ '@tauri-apps/api/dialog')
+          const { open } = dialogModule
+          
+          const selected = await open({
+            directory: true,
+            multiple: false,
+            title: 'Select Project Folder',
+          })
+          
+          if (selected && typeof selected === 'string') {
+            setProjectFolder(selected)
+            setIsSelecting(false)
+            return
+          }
+        } catch (error) {
+          console.warn('Tauri API not available:', error)
         }
-      } else {
-        // Fallback for web version - use file input with webkitdirectory
-        const input = document.createElement('input')
-        input.type = 'file'
-        input.webkitdirectory = true
-        input.multiple = true
-        
-        input.onchange = (e) => {
-          const files = (e.target as HTMLInputElement).files
-          if (files && files.length > 0) {
-            // Get the common path from the first file
-            const firstFile = files[0]
-            const pathParts = firstFile.webkitRelativePath.split('/')
-            if (pathParts.length > 1) {
-              // Remove the file name to get the directory
-              pathParts.pop()
-              const folderPath = pathParts.join('/')
-              setProjectFolder(folderPath)
-            }
+      }
+      
+      // Fallback for web version - use file input with webkitdirectory
+      const input = document.createElement('input')
+      input.type = 'file'
+      input.webkitdirectory = true
+      input.multiple = true
+      
+      input.onchange = (e) => {
+        const files = (e.target as HTMLInputElement).files
+        if (files && files.length > 0) {
+          // Get the common path from the first file
+          const firstFile = files[0]
+          const pathParts = firstFile.webkitRelativePath.split('/')
+          if (pathParts.length > 1) {
+            // Remove the file name to get the directory
+            pathParts.pop()
+            const folderPath = pathParts.join('/')
+            setProjectFolder(folderPath)
           }
         }
-        
-        input.click()
       }
+      
+      input.click()
     } catch (error) {
       console.error('Error selecting folder:', error)
     } finally {
