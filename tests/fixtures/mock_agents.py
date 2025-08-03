@@ -14,13 +14,13 @@ from src.core.models import TaskType
 class MockTaskAgent(BaseAgent):
     """Mock implementation of TaskAgent for testing."""
     
-    def __init__(self, name: str = "mock_task_agent", **kwargs):
+    def __init__(self, name: str = "mock_task_agent", shared_context=None, **kwargs):
         # Provide required parameters for BaseAgent
         role = kwargs.get('role', 'Mock Task Agent')
         goal = kwargs.get('goal', 'Execute test tasks for validation')
         backstory = kwargs.get('backstory', 'A mock agent designed for testing purposes')
         
-        super().__init__(name, role, goal, backstory)
+        super().__init__(name, role, goal, backstory, shared_context=shared_context)
         self.agent_type = TaskType.TECHNICAL
         self.execution_count = 0
         self.execution_history = []
@@ -145,12 +145,12 @@ Implementation Plan:
 class MockSystemAgent(BaseAgent):
     """Mock implementation of SystemAgent for testing."""
     
-    def __init__(self, name: str = "mock_system_agent", **kwargs):
+    def __init__(self, name: str = "mock_system_agent", shared_context=None, **kwargs):
         role = kwargs.get('role', 'Mock System Agent')
         goal = kwargs.get('goal', 'Monitor and manage system resources')
         backstory = kwargs.get('backstory', 'A mock agent for system operations testing')
         
-        super().__init__(name, role, goal, backstory)
+        super().__init__(name, role, goal, backstory, shared_context=shared_context)
         self.agent_type = TaskType.TECHNICAL
         self.system_calls = []
         self.mock_system_state = {
@@ -221,12 +221,12 @@ class MockSystemAgent(BaseAgent):
 class MockResearchAgent(BaseAgent):
     """Mock research agent specialized for information gathering."""
     
-    def __init__(self, name: str = "mock_research_agent", **kwargs):
+    def __init__(self, name: str = "mock_research_agent", shared_context=None, **kwargs):
         role = kwargs.get('role', 'Mock Research Agent')
         goal = kwargs.get('goal', 'Gather and analyze information for decision making')
         backstory = kwargs.get('backstory', 'A mock agent specialized in research and analysis')
         
-        super().__init__(name, role, goal, backstory)
+        super().__init__(name, role, goal, backstory, shared_context=shared_context)
         self.agent_type = TaskType.RESEARCH
         self.research_database = {
             "python": "Python is a high-level programming language...",
@@ -276,12 +276,12 @@ class MockResearchAgent(BaseAgent):
 class MockCreativeAgent(BaseAgent):
     """Mock creative agent for content generation."""
     
-    def __init__(self, name: str = "mock_creative_agent", **kwargs):
+    def __init__(self, name: str = "mock_creative_agent", shared_context=None, **kwargs):
         role = kwargs.get('role', 'Mock Creative Agent')
         goal = kwargs.get('goal', 'Generate creative and engaging content')
         backstory = kwargs.get('backstory', 'A mock agent focused on creative content generation')
         
-        super().__init__(name, role, goal, backstory)
+        super().__init__(name, role, goal, backstory, shared_context=shared_context)
         self.agent_type = TaskType.CREATIVE
         self.creativity_level = 0.8
     
