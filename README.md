@@ -13,6 +13,7 @@ Shepherd is an intelligent multi-agent system that automatically determines the 
 - 🧠 **Intelligent Prompt Analysis** - Automatically analyzes complexity, urgency, and task requirements
 - 🔀 **Dynamic Workflow Selection** - Chooses optimal patterns (Sequential, Parallel, Conditional, etc.)
 - 🤖 **Multi-Agent Orchestration** - Creates and coordinates specialized AI agents
+- 🔧 **Tool Use Integration** - Execute external tools, APIs, and code for enhanced capabilities
 - 🖥️ **Multiple Interfaces** - Modern TypeScript desktop GUI with Tauri, FastAPI backend, and command-line modes
 - 🛡️ **Safety-First Design** - Built-in validation and error handling
 - 🚀 **Local LLM Support** - Works with Ollama for privacy-focused AI
@@ -114,9 +115,17 @@ Shepherd creates specialized AI agents based on detected task types:
 - **Analytical Agents** - Data analysis and insights
 - **Communication Agents** - Documentation and reporting
 
-### 4. Execution & Monitoring
+### 4. Tool Execution
+Agents can execute external tools including:
+- **Mathematical calculations and code execution** - Advanced computations and custom scripts
+- **Web searches and API calls** - Real-time information gathering and service integration
+- **File operations and system interactions** - Data processing and system administration
+- **Custom tool integrations** - Domain-specific tools and specialized capabilities
+
+### 5. Execution & Monitoring
 The system executes the workflow with:
 - Real-time progress tracking
+- Tool execution monitoring with timeout handling
 - Error handling and recovery
 - Execution time monitoring
 - Structured result compilation
@@ -132,10 +141,23 @@ shepherd/
 │   │   ├── workflow_selector.py # Pattern selection logic
 │   │   └── orchestrator.py      # Main coordination engine
 │   ├── agents/                   # AI agent system
-│   │   ├── base_agent.py         # Agent base class
+│   │   ├── base_agent.py         # Agent base class with memory & communication
 │   │   ├── task_agent.py         # Specialized task agents
 │   │   ├── system_agent.py       # System operations agent
 │   │   └── agent_factory.py      # Agent creation logic
+│   ├── memory/                   # Three-tier memory system (Phase 2)
+│   │   ├── base.py              # Memory interface and base classes
+│   │   ├── local_memory.py      # Agent-local memory with LRU eviction
+│   │   └── shared_context.py    # Shared context pool with pub/sub
+│   ├── communication/            # Agent communication system (Phase 3)
+│   │   ├── manager.py           # CommunicationManager with async routing
+│   │   ├── protocols.py         # Message protocols and patterns
+│   │   └── peer_review.py       # Peer review and consensus mechanisms
+│   ├── tools/                    # Tool registry and execution system (Phase 4)
+│   │   ├── base_tool.py         # Tool interface and execution framework
+│   │   ├── registry.py          # Tool discovery and permissions
+│   │   ├── execution_engine.py  # Tool execution with monitoring
+│   │   └── core/                # Built-in tool implementations
 │   ├── workflows/                # Workflow implementations
 │   │   ├── base_workflow.py      # Workflow base class
 │   │   ├── sequential_workflow.py # Sequential execution
@@ -160,7 +182,15 @@ shepherd/
 ├── tools/                        # Development and analysis tools
 │   ├── analyze_logs.py          # Log analysis and troubleshooting
 │   └── test_app_mode.py         # Desktop compatibility tester
-├── tests/                        # Test infrastructure (Phase 1)
+├── tests/                        # Comprehensive test infrastructure (Phases 1-4)
+│   ├── unit/                    # Unit tests (94+ tests total)
+│   │   ├── memory/              # Memory system tests (31 tests, Phase 2)
+│   │   ├── communication/       # Communication tests (17 tests, Phase 3)
+│   │   └── tools/               # Tool system tests (20 tests, Phase 4)
+│   ├── integration/             # Integration tests (11+ tests)
+│   │   ├── test_memory_integration.py    # Memory system integration
+│   │   ├── test_agent_communication.py  # Agent communication integration
+│   │   └── test_basic_tool_integration.py # Tool system integration
 │   ├── test_infrastructure.py   # 32 infrastructure validation tests
 │   ├── conftest.py              # pytest configuration and fixtures
 │   └── fixtures/                # Mock agents and sample data
@@ -197,6 +227,24 @@ shepherd/
 - Maps task types to appropriate agent configurations
 - Supports extensible agent types through registry pattern
 - Handles agent lifecycle and resource management
+
+#### Agent Memory System (`src/memory/`) - Phase 2
+- **BaseMemory**: Abstract interface for all memory implementations
+- **AgentLocalMemory**: Short-term, task-specific storage with LRU eviction
+- **SharedContextPool**: Medium-term collaboration with pub/sub notifications
+- Agent memory integration enables context sharing and discovery collaboration
+
+#### Agent Communication System (`src/communication/`) - Phase 3
+- **CommunicationManager**: Async message routing and conversation tracking
+- **Message Protocols**: 13 MessageType enums with structured communication patterns
+- **PeerReviewMechanism**: Consensus building and quality assurance across agents
+- Direct agent-to-agent messaging with request-response patterns and timeout handling
+
+#### Tool System (`src/tools/`) - Phase 4
+- **ToolRegistry**: Central catalog with permissions and discovery capabilities
+- **ToolExecutionEngine**: Monitored execution with timeout and error handling
+- **BaseAgent Integration**: Tool access with validation and memory integration
+- Built-in tools for computation, web search, file operations, and code execution
 
 #### Workflow Implementations (`src/workflows/`)
 - **BaseWorkflow**: Abstract base with common functionality
@@ -313,8 +361,8 @@ cd shepherd-gui && npm test -- --testNamePattern="ProjectFolderSelector"
 # Activate environment
 source venv/bin/activate
 
-# Run tests (32 infrastructure tests available)
-pytest tests/test_infrastructure.py
+# Run tests (109 total tests available: 94 stable backend + 7 frontend + 8 communication integration)
+pytest tests/
 
 # Code formatting
 black src/ tests/
@@ -337,7 +385,7 @@ npm run dev
 # Development server (desktop)
 npm run tauri:dev
 
-# Run tests (7 component tests available)
+# Run tests (7 frontend component tests available)
 npm test
 
 # Build for production
@@ -383,7 +431,7 @@ Use the built-in log analyzer for troubleshooting:
 - **System Events**: Startup, configuration, resource usage
 - **Errors**: Full stack traces, context information, recovery attempts
 
-## Current Status: Phase 1 Complete
+## Current Status: Phase 3 Complete
 
 ### ✅ Phase 1 Completed: Test Infrastructure
 - **Comprehensive test infrastructure** with 32 backend tests and 7 frontend tests
@@ -401,17 +449,47 @@ Use the built-in log analyzer for troubleshooting:
 - System task execution with real performance analysis (SystemAgent)
 - **Three-panel responsive GUI with resizable panels and themes**
 
-### 🚧 Phase 2: Memory System Foundation
-- Agent collaboration and shared memory systems
-- Context sharing between agents
-- Learning and adaptation mechanisms
-- Interactive confirmation system for high-risk operations
-- Risk assessment and validation
+### ✅ Phase 2 Completed: Memory System Foundation
+- **Three-tier memory architecture** with local, shared, and persistent layers
+- **Agent memory integration** with BaseAgent class supporting memory operations
+- **Local Agent Memory** with LRU eviction and action tracking
+- **Shared Context Pool** with pub/sub system and context types
+- **Memory testing infrastructure** with 37 additional tests (31 unit + 6 integration)
+- **Agent collaboration** via discovery sharing and context subscriptions
+- **Memory lifecycle management** with proper cleanup and statistics tracking
+- **Context isolation** between agents while enabling selective collaboration
+
+### ✅ Phase 3 Completed: Agent Communication System
+- **Direct agent-to-agent messaging** with CommunicationManager and structured protocols
+- **Event-based communication** with Message dataclass and 13 MessageType enums
+- **Peer review mechanisms** with consensus building and quality assurance
+- **BaseAgent communication integration** with send_message, request_response, and broadcast methods
+- **Communication testing infrastructure** with 25 additional tests (17 unit + 8 integration)
+- **Request-response patterns** with timeout handling and error recovery
+- **Message routing and queuing** with conversation tracking and statistics
+- **Structured communication protocols** for discovery sharing, status updates, and peer feedback
+- **Total working tests**: 134+ tests (109 previous + 25 tool system tests)
+
+### ✅ Phase 4 Completed: Tool Use Foundation
+- **Core tool registry and execution infrastructure** with comprehensive tool catalog and permissions
+- **Tool-aware agent capabilities** with permission validation and execution monitoring
+- **Basic tool types** (computation, information retrieval, file operations) implemented and tested
+- **BaseAgent tool integration** with execute_tool(), validate_tool_access(), and select_tools_for_task()
+- **Tool execution engine** with timeout handling, error recovery, and monitoring
+- **Tool testing infrastructure** with comprehensive unit and integration tests (25 tests total)
+- **Built-in tools**: Calculator, web search, file operations with safety measures and validation
+
+### 🚧 Phase 5: Advanced Workflow Patterns (Next)
+- **Tool-integrated conditional workflows** requiring agent and tool coordination
+- **Iterative workflows with tool-based convergence** detection and optimization
+- **Hierarchical agent coordination** with tool delegation capabilities
+- **Dynamic workflow adaptation** based on tool execution results and agent collaboration
 
 ### 🔮 Future Phases
-- **Phase 3**: Advanced workflow patterns (Conditional, Iterative, Hierarchical)
-- **Phase 4**: Learning from user feedback and workflow optimization  
-- **Phase 5**: Enterprise features (multi-user, audit logging, advanced API)
+- **Phase 6**: Vector Memory Implementation with semantic search and embeddings
+- **Phase 7**: Learning from user feedback and workflow optimization
+- **Phase 8**: Advanced agent specialization and domain expertise
+- **Phase 9**: Enterprise features (multi-user, audit logging, advanced API)
 
 ## Troubleshooting
 
@@ -476,7 +554,7 @@ cd shepherd-gui && rm -rf node_modules && npm install
 3. Make your changes
 4. Add tests for new functionality (use the comprehensive test infrastructure)
 5. Run the test suite: `./scripts/run_tests.sh --coverage`
-6. Ensure all tests pass (currently 32 backend + 7 frontend tests)
+6. Ensure all tests pass (currently 109 total tests: 94 stable backend + 7 frontend + 8 communication integration tests)
 7. Run linting: `black src/ tests/` and `cd shepherd-gui && npm run lint`
 8. Submit a pull request
 

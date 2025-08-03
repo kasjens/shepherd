@@ -44,6 +44,7 @@ Shepherd uses a hierarchical multi-agent system where agents collaborate through
 2. **Broadcast Communication**: Agents can broadcast findings to all relevant agents
 3. **Request-Response**: Agents can request specific information from others
 4. **Event-Based**: Agents react to events published by other agents
+5. **Tool-Mediated Communication**: Agents share information through tool execution results and collaborative tool use
 
 ## Memory and Context Sharing
 
@@ -207,6 +208,53 @@ class KnowledgeSynthesizer:
         
         # Store synthesized knowledge
         self.knowledge_base.store_synthesis(hypotheses)
+```
+
+#### Tool-Enhanced Collaboration
+```python
+class ToolEnhancedCollaboration:
+    async def coordinate_tool_usage(self, agents: List[BaseAgent], task: str):
+        """Coordinate agents using tools for enhanced collaboration"""
+        
+        # Research Agent uses web search tool to gather current information
+        search_results = await research_agent.execute_tool("web_search", {
+            "query": f"latest {task} information 2025",
+            "max_results": 10
+        })
+        
+        # Share findings through memory system
+        await research_agent.share_discovery("web_research", {
+            "task": task,
+            "results": search_results.data,
+            "relevance": 0.9
+        })
+        
+        # Security Agent uses code analyzer tool on shared findings
+        if "code" in task.lower():
+            code_artifact = await shared_context.retrieve("code_artifact")
+            analysis = await security_agent.execute_tool("code_analyzer", {
+                "code": code_artifact,
+                "focus": "security_patterns"
+            })
+            
+            # Communicate findings via structured messaging
+            await security_agent.send_message_to_agent(
+                "technical_agent",
+                MessageType.NOTIFICATION,
+                {"security_analysis": analysis.data, "priority": "high"}
+            )
+        
+        # Technical Agent uses calculation tools for optimization
+        calculations = await technical_agent.execute_tool("calculator", {
+            "expression": "performance_score * security_factor / complexity"
+        })
+        
+        # All agents coordinate through both memory and tool results
+        final_synthesis = await self.synthesize_tool_results([
+            search_results, analysis, calculations
+        ])
+        
+        return final_synthesis
 ```
 
 ## Implementation Strategies

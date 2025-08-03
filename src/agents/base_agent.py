@@ -1,16 +1,23 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Set
 from crewai import Agent
 from ..utils.logger import get_logger, log_agent_action
 from ..memory.local_memory import AgentLocalMemory
 from ..memory.shared_context import SharedContextPool
+from ..communication.manager import CommunicationManager
+from ..communication.protocols import Message, MessageType, CommunicationProtocol
+from ..tools import tool_registry, execution_engine, ExecutionContext, ToolPermission, ToolResult
+from ..tools.core import FileOperationsTool
 import time
 import uuid
+import asyncio
+from datetime import datetime
 
 
 class BaseAgent(ABC):
     def __init__(self, name: str, role: str, goal: str, backstory: str = "", 
-                 shared_context: Optional[SharedContextPool] = None):
+                 shared_context: Optional[SharedContextPool] = None,
+                 comm_manager: Optional[CommunicationManager] = None):
         self.id = str(uuid.uuid4())
         self.name = name
         self.role = role
@@ -25,8 +32,21 @@ class BaseAgent(ABC):
         self.local_memory = AgentLocalMemory(self.id)
         self.shared_context = shared_context or SharedContextPool()
         
+        # Initialize communication system
+        self.comm_manager = comm_manager
+        if comm_manager:
+            comm_manager.register_agent(self.id, self.handle_message, {
+                "name": self.name,
+                "role": self.role,
+                "capabilities": self._get_capabilities()
+            })
+        
         # Subscribe to relevant context updates
         self._setup_context_subscriptions()
+        
+        # Initialize tool system
+        self.available_permissions: Set[ToolPermission] = self._get_default_permissions()
+        self._setup_tools()
     
     def set_project_folder(self, project_folder: str):
         """Set the project folder context for this agent"""
@@ -217,4 +237,546 @@ class BaseAgent(ABC):
             "shared_context_size": shared_size,
             "agent_id": self.id,
             "agent_name": self.name
+        }
+    
+    # Communication system methods
+    
+    def _get_capabilities(self) -> List[str]:
+        """
+        Get list of capabilities this agent provides.
+        
+        Subclasses can override this to specify their capabilities.
+        
+        Returns:
+            List of capability identifiers
+        """
+        return [self.role.lower(), "general"]
+    
+    async def handle_message(self, message: Message) -> None:
+        """
+        Handle incoming messages from other agents.
+        
+        This is the main message handler that processes different types
+        of messages and delegates to appropriate methods.
+        
+        Args:
+            message: Incoming message to handle
+        """
+        self.logger.debug(f"Received message: {message.message_type.value} from {message.sender}")
+        
+        try:
+            # Handle different message types
+            if message.message_type == MessageType.REQUEST:
+                await self._handle_request(message)
+            elif message.message_type == MessageType.DISCOVERY:
+                await self._handle_discovery(message)
+            elif message.message_type == MessageType.NOTIFICATION:
+                await self._handle_notification(message)
+            elif message.message_type == MessageType.REVIEW_REQUEST:
+                await self._handle_review_request(message)
+            elif message.message_type == MessageType.STATUS_UPDATE:
+                await self._handle_status_update(message)
+            elif message.message_type == MessageType.RESPONSE:
+                # Responses are handled by the communication manager
+                pass
+            else:
+                self.logger.warning(f"Unhandled message type: {message.message_type}")
+                
+        except Exception as e:
+            self.logger.error(f"Error handling message from {message.sender}: {e}")
+            
+            # Send error response if message requires response
+            if message.requires_response:
+                await self.send_response(message, {"error": str(e)}, success=False)
+    
+    async def _handle_request(self, message: Message) -> None:
+        """
+        Handle request messages from other agents.
+        
+        Args:
+            message: Request message
+        """
+        request_type = message.content.get("request_type")
+        data = message.content.get("data", {})
+        
+        self.logger.info(f"Processing request: {request_type} from {message.sender}")
+        
+        # Process the request
+        try:
+            response_data = await self.process_request(request_type, data, message.sender)
+            await self.send_response(message, response_data, success=True)
+        except Exception as e:
+            self.logger.error(f"Error processing request {request_type}: {e}")
+            await self.send_response(message, {"error": str(e)}, success=False)
+    
+    async def _handle_discovery(self, message: Message) -> None:
+        """
+        Handle discovery messages from other agents.
+        
+        Args:
+            message: Discovery message
+        """
+        discovery_type = message.content.get("discovery_type")
+        data = message.content.get("data")
+        relevance = message.content.get("relevance", 0.5)
+        
+        # Only process discoveries above relevance threshold
+        if relevance >= 0.3:
+            # Store relevant discovery in local memory
+            await self.store_memory(
+                f"discovery_{message.sender}_{discovery_type}",
+                data,
+                {"source": message.sender, "relevance": relevance, "type": "discovery"}
+            )
+            
+            self.logger.info(f"Stored discovery: {discovery_type} from {message.sender} (relevance: {relevance})")
+    
+    async def _handle_notification(self, message: Message) -> None:
+        """
+        Handle notification messages from other agents.
+        
+        Args:
+            message: Notification message
+        """
+        # Store notification for later reference
+        await self.store_memory(
+            f"notification_{message.sender}_{int(time.time())}",
+            message.content,
+            {"source": message.sender, "type": "notification"}
+        )
+        
+        self.logger.info(f"Received notification from {message.sender}")
+    
+    async def _handle_review_request(self, message: Message) -> None:
+        """
+        Handle review request messages from other agents.
+        
+        Args:
+            message: Review request message
+        """
+        content = message.content.get("content")
+        criteria = message.content.get("criteria", [])
+        
+        self.logger.info(f"Processing review request from {message.sender}")
+        
+        try:
+            # Perform the review
+            review_result = await self.review_content(content, criteria, message.sender)
+            
+            # Send review response
+            response_data = {
+                "review": review_result,
+                "reviewer": self.name,
+                "criteria_used": criteria
+            }
+            await self.send_response(message, response_data, success=True)
+            
+        except Exception as e:
+            self.logger.error(f"Error processing review request: {e}")
+            await self.send_response(message, {"error": str(e)}, success=False)
+    
+    async def _handle_status_update(self, message: Message) -> None:
+        """
+        Handle status update messages from other agents.
+        
+        Args:
+            message: Status update message
+        """
+        status = message.content.get("status")
+        details = message.content.get("details", {})
+        
+        # Store agent status for awareness
+        await self.store_memory(
+            f"agent_status_{message.sender}",
+            {"status": status, "details": details, "timestamp": message.timestamp},
+            {"source": message.sender, "type": "status"}
+        )
+        
+        self.logger.debug(f"Agent {message.sender} status: {status}")
+    
+    async def send_message_to_agent(self, recipient: str, message_type: MessageType,
+                                  content: Dict[str, Any], 
+                                  requires_response: bool = False,
+                                  timeout: int = None) -> Optional[Message]:
+        """
+        Send a message to another agent.
+        
+        Args:
+            recipient: ID of recipient agent
+            message_type: Type of message to send
+            content: Message content
+            requires_response: Whether to wait for response
+            timeout: Response timeout in seconds
+            
+        Returns:
+            Response message if requires_response=True, None otherwise
+        """
+        if not self.comm_manager:
+            self.logger.warning("No communication manager available")
+            return None
+        
+        # Create message
+        message = Message(
+            sender=self.id,
+            recipient=recipient,
+            message_type=message_type,
+            content=content,
+            timestamp=datetime.now(),
+            message_id=str(uuid.uuid4()),
+            requires_response=requires_response,
+            response_timeout=timeout
+        )
+        
+        # Send message
+        if requires_response:
+            try:
+                response_future = await self.comm_manager.send_message(message)
+                response = await response_future
+                return response
+            except asyncio.TimeoutError:
+                self.logger.warning(f"Timeout waiting for response from {recipient}")
+                return None
+        else:
+            await self.comm_manager.send_message(message)
+            return None
+    
+    async def send_request_to_agent(self, recipient: str, request_type: str,
+                                  data: Dict[str, Any], timeout: int = 30) -> Optional[Dict[str, Any]]:
+        """
+        Send a request to another agent and wait for response.
+        
+        Args:
+            recipient: ID of target agent
+            request_type: Type of request
+            data: Request data
+            timeout: Response timeout in seconds
+            
+        Returns:
+            Response data if successful, None if failed
+        """
+        if not self.comm_manager:
+            self.logger.warning("No communication manager available")
+            return None
+        
+        try:
+            response_data = await self.comm_manager.send_request(
+                self.id, recipient, request_type, data, timeout
+            )
+            return response_data
+        except Exception as e:
+            self.logger.error(f"Request to {recipient} failed: {e}")
+            return None
+    
+    async def send_response(self, original_message: Message, 
+                          response_data: Dict[str, Any], success: bool = True) -> None:
+        """
+        Send a response to a received message.
+        
+        Args:
+            original_message: The message being responded to
+            response_data: Response data
+            success: Whether the request was successful
+        """
+        if not self.comm_manager:
+            self.logger.warning("No communication manager available")
+            return
+        
+        response = CommunicationProtocol.create_response(
+            original_message, self.id, response_data, success
+        )
+        
+        await self.comm_manager.send_message(response)
+    
+    async def broadcast_status(self, status: str, details: Dict[str, Any] = None) -> None:
+        """
+        Broadcast status update to all agents.
+        
+        Args:
+            status: Current status
+            details: Additional status details
+        """
+        if not self.comm_manager:
+            self.logger.warning("No communication manager available")
+            return
+        
+        message = CommunicationProtocol.create_status_update(
+            self.id, status, details or {}
+        )
+        
+        await self.comm_manager.send_message(message)
+        self.logger.info(f"Broadcast status: {status}")
+    
+    async def request_peer_review(self, reviewer_id: str, content: Dict[str, Any],
+                                criteria: List[str] = None) -> Optional[Dict[str, Any]]:
+        """
+        Request peer review from another agent.
+        
+        Args:
+            reviewer_id: ID of reviewing agent
+            content: Content to be reviewed
+            criteria: Review criteria
+            
+        Returns:
+            Review result if successful, None if failed
+        """
+        if not self.comm_manager:
+            self.logger.warning("No communication manager available")
+            return None
+        
+        message = CommunicationProtocol.create_review_request(
+            self.id, reviewer_id, content, criteria
+        )
+        
+        try:
+            response_future = await self.comm_manager.send_message(message)
+            response = await response_future
+            
+            if response.content.get("success"):
+                return response.content.get("data")
+            else:
+                self.logger.error(f"Review request failed: {response.content.get('error')}")
+                return None
+                
+        except asyncio.TimeoutError:
+            self.logger.warning(f"Review request to {reviewer_id} timed out")
+            return None
+    
+    # Abstract methods for subclasses to implement
+    
+    async def process_request(self, request_type: str, data: Dict[str, Any], 
+                            sender: str) -> Dict[str, Any]:
+        """
+        Process a request from another agent.
+        
+        Subclasses should override this to handle specific request types.
+        
+        Args:
+            request_type: Type of request
+            data: Request data
+            sender: ID of requesting agent
+            
+        Returns:
+            Response data
+        """
+        return {"message": f"Request {request_type} processed by {self.name}"}
+    
+    async def review_content(self, content: Dict[str, Any], criteria: List[str],
+                           requester: str) -> Dict[str, Any]:
+        """
+        Review content from another agent.
+        
+        Subclasses should override this to provide specific review capabilities.
+        
+        Args:
+            content: Content to review
+            criteria: Review criteria
+            requester: ID of requesting agent
+            
+        Returns:
+            Review result
+        """
+        return {
+            "score": 0.8,
+            "feedback": f"Content reviewed by {self.name}",
+            "approved": True,
+            "suggestions": []
+        }
+    
+    # Tool system methods
+    
+    def _get_default_permissions(self) -> Set[ToolPermission]:
+        """Get default tool permissions for this agent."""
+        # Base agents get read and execute permissions
+        # Specific agent types can override for additional permissions
+        return {ToolPermission.READ, ToolPermission.EXECUTE}
+    
+    def _setup_tools(self):
+        """Set up tool system for this agent."""
+        # Set up file operations tool with project folder if available
+        if hasattr(self, 'project_folder') and self.project_folder:
+            file_tool = FileOperationsTool()
+            file_tool.set_project_folder(self.project_folder)
+            # Note: File tool registration handled globally
+        
+        self.logger.debug(f"Tool system initialized for {self.name} with permissions: {[p.value for p in self.available_permissions]}")
+    
+    async def execute_tool(self, tool_name: str, parameters: Dict[str, Any], 
+                          timeout: Optional[int] = None) -> ToolResult:
+        """
+        Execute a tool with validation and monitoring.
+        
+        Args:
+            tool_name: Name of the tool to execute
+            parameters: Tool parameters
+            timeout: Optional timeout override
+            
+        Returns:
+            ToolResult from execution
+        """
+        # Create execution context
+        context = ExecutionContext(
+            agent_id=self.id,
+            agent_name=self.name,
+            conversation_id=getattr(self, 'conversation_id', 'unknown'),
+            workflow_id=getattr(self, 'workflow_id', None),
+            permissions=self.available_permissions,
+            metadata={
+                "role": self.role,
+                "goal": self.goal
+            }
+        )
+        
+        self.logger.info(f"Executing tool {tool_name} with parameters: {parameters}")
+        
+        # Execute tool
+        result = await execution_engine.execute_tool(
+            tool_name=tool_name,
+            parameters=parameters,
+            context=context,
+            timeout=timeout
+        )
+        
+        # Store result in memory for context
+        await self.store_memory(
+            f"tool_execution_{tool_name}_{int(time.time())}",
+            {
+                "tool_name": tool_name,
+                "parameters": parameters,
+                "result": {
+                    "success": result.success,
+                    "data": result.data,
+                    "error": result.error,
+                    "execution_time": result.execution_time
+                }
+            },
+            {"type": "tool_execution", "tool": tool_name}
+        )
+        
+        if result.success:
+            self.logger.info(f"Tool {tool_name} executed successfully in {result.execution_time:.2f}s")
+        else:
+            self.logger.error(f"Tool {tool_name} failed: {result.error}")
+        
+        return result
+    
+    def get_available_tools(self) -> List[Dict[str, Any]]:
+        """
+        Get list of tools available to this agent.
+        
+        Returns:
+            List of tool information dictionaries
+        """
+        available_tools = tool_registry.get_tools_for_permissions(self.available_permissions)
+        
+        return [
+            {
+                "name": tool.name,
+                "description": tool.description,
+                "category": tool.category.value,
+                "parameters": [
+                    {
+                        "name": p.name,
+                        "type": p.type,
+                        "description": p.description,
+                        "required": p.required
+                    }
+                    for p in tool.parameters
+                ]
+            }
+            for tool in available_tools
+        ]
+    
+    def validate_tool_access(self, tool_name: str) -> bool:
+        """
+        Check if this agent can access a specific tool.
+        
+        Args:
+            tool_name: Name of the tool to check
+            
+        Returns:
+            True if tool can be accessed, False otherwise
+        """
+        return tool_registry.check_tool_permission(tool_name, self.available_permissions)
+    
+    async def select_tools_for_task(self, task_description: str) -> List[str]:
+        """
+        Suggest tools that might be useful for a given task.
+        
+        Args:
+            task_description: Description of the task
+            
+        Returns:
+            List of suggested tool names
+        """
+        # Simple keyword-based tool selection
+        # In production, this could use embedding similarity or LLM classification
+        task_lower = task_description.lower()
+        suggestions = []
+        
+        # Check available tools
+        available_tools = tool_registry.get_tools_for_permissions(self.available_permissions)
+        
+        for tool in available_tools:
+            # Basic keyword matching
+            if any(keyword in task_lower for keyword in [
+                # Calculator keywords
+                "calculate", "math", "compute", "number", "formula", "equation",
+                # File operations keywords  
+                "file", "read", "write", "save", "load", "directory", "folder",
+                # Web search keywords
+                "search", "find", "lookup", "research", "information", "web"
+            ]):
+                if tool.name == "calculator" and any(kw in task_lower for kw in ["calculate", "math", "compute", "number", "formula"]):
+                    suggestions.append(tool.name)
+                elif tool.name == "file_operations" and any(kw in task_lower for kw in ["file", "read", "write", "save", "load"]):
+                    suggestions.append(tool.name)
+                elif tool.name == "web_search" and any(kw in task_lower for kw in ["search", "find", "lookup", "research"]):
+                    suggestions.append(tool.name)
+        
+        return suggestions
+    
+    def add_tool_permission(self, permission: ToolPermission):
+        """Add a tool permission to this agent."""
+        self.available_permissions.add(permission)
+        self.logger.info(f"Added tool permission {permission.value} to {self.name}")
+    
+    def remove_tool_permission(self, permission: ToolPermission):
+        """Remove a tool permission from this agent."""
+        self.available_permissions.discard(permission)
+        self.logger.info(f"Removed tool permission {permission.value} from {self.name}")
+    
+    async def get_tool_usage_statistics(self) -> Dict[str, Any]:
+        """Get statistics about tool usage by this agent."""
+        history = execution_engine.get_execution_history(agent_id=self.id)
+        
+        if not history:
+            return {
+                "agent_id": self.id,
+                "agent_name": self.name,
+                "total_executions": 0,
+                "tools_used": [],
+                "success_rate": 0.0
+            }
+        
+        tools_used = {}
+        successful = 0
+        
+        for record in history:
+            tool_name = record["tool_name"]
+            if tool_name not in tools_used:
+                tools_used[tool_name] = {"total": 0, "successful": 0}
+            
+            tools_used[tool_name]["total"] += 1
+            if record["success"]:
+                tools_used[tool_name]["successful"] += 1
+                successful += 1
+        
+        return {
+            "agent_id": self.id,
+            "agent_name": self.name,
+            "total_executions": len(history),
+            "successful_executions": successful,
+            "success_rate": successful / len(history),
+            "tools_used": tools_used,
+            "available_permissions": [p.value for p in self.available_permissions]
         }
