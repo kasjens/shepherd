@@ -14,6 +14,7 @@ Shepherd is an intelligent multi-agent system that automatically determines the 
 - 🔀 **Dynamic Workflow Selection** - Chooses optimal patterns (Sequential, Parallel, Conditional, etc.)
 - 🤖 **Multi-Agent Orchestration** - Creates and coordinates specialized AI agents
 - 🔧 **Tool Use Integration** - Execute external tools, APIs, and code for enhanced capabilities
+- 💬 **Conversation Compacting** - Unlimited conversation length with intelligent context preservation
 - 🖥️ **Multiple Interfaces** - Modern TypeScript desktop GUI with Tauri, FastAPI backend, and command-line modes
 - 🛡️ **Safety-First Design** - Built-in validation and error handling
 - 🚀 **Local LLM Support** - Works with Ollama for privacy-focused AI
@@ -145,10 +146,12 @@ shepherd/
 │   │   ├── task_agent.py         # Specialized task agents
 │   │   ├── system_agent.py       # System operations agent
 │   │   └── agent_factory.py      # Agent creation logic
-│   ├── memory/                   # Three-tier memory system (Phase 2)
+│   ├── memory/                   # Three-tier memory system (Phases 2 & 5)
 │   │   ├── base.py              # Memory interface and base classes
 │   │   ├── local_memory.py      # Agent-local memory with LRU eviction
-│   │   └── shared_context.py    # Shared context pool with pub/sub
+│   │   ├── shared_context.py    # Shared context pool with pub/sub
+│   │   ├── conversation_compactor.py # Conversation compacting engine (Phase 5)
+│   │   └── context_preservation.py   # Context preservation strategy (Phase 5)
 │   ├── communication/            # Agent communication system (Phase 3)
 │   │   ├── manager.py           # CommunicationManager with async routing
 │   │   ├── protocols.py         # Message protocols and patterns
@@ -175,7 +178,8 @@ shepherd/
 │   ├── package.json             # Node.js dependencies
 │   └── tailwind.config.js       # Tailwind CSS configuration
 ├── api/                          # FastAPI backend server
-│   └── main.py                  # REST API with WebSocket support
+│   ├── main.py                  # REST API with WebSocket support
+│   └── conversation_manager.py  # Conversation compacting API endpoints (Phase 5)
 ├── scripts/                      # Installation and startup scripts
 │   ├── install.sh               # Comprehensive installation
 │   └── start.sh                 # Multi-mode launcher (API/GUI/CLI)
@@ -361,7 +365,7 @@ cd shepherd-gui && npm test -- --testNamePattern="ProjectFolderSelector"
 # Activate environment
 source venv/bin/activate
 
-# Run tests (109 total tests available: 94 stable backend + 7 frontend + 8 communication integration)
+# Run tests (178+ total tests available: 134 previous + 44 conversation compacting)
 pytest tests/
 
 # Code formatting
@@ -431,7 +435,7 @@ Use the built-in log analyzer for troubleshooting:
 - **System Events**: Startup, configuration, resource usage
 - **Errors**: Full stack traces, context information, recovery attempts
 
-## Current Status: Phase 3 Complete
+## Current Status: Phase 5 Complete
 
 ### ✅ Phase 1 Completed: Test Infrastructure
 - **Comprehensive test infrastructure** with 32 backend tests and 7 frontend tests
@@ -479,7 +483,15 @@ Use the built-in log analyzer for troubleshooting:
 - **Tool testing infrastructure** with comprehensive unit and integration tests (25 tests total)
 - **Built-in tools**: Calculator, web search, file operations with safety measures and validation
 
-### 🚧 Phase 5: Advanced Workflow Patterns (Next)
+### ✅ Phase 5 Completed: Conversation Compacting System
+- **Intelligent conversation compacting** with multiple strategies (Auto, Milestone, Selective, Aggressive, Conservative)
+- **Real-time token monitoring** with WebSocket notifications and three-level warning system
+- **Context preservation strategy** with importance scoring and category-based preservation
+- **Professional GUI components** for conversation management with live updates
+- **Complete API integration** with RESTful endpoints and background task support
+- **Comprehensive testing** with 44 tests covering all compacting scenarios and strategies
+
+### 🚧 Phase 6: Advanced Workflow Patterns (Next)
 - **Tool-integrated conditional workflows** requiring agent and tool coordination
 - **Iterative workflows with tool-based convergence** detection and optimization
 - **Hierarchical agent coordination** with tool delegation capabilities
@@ -554,7 +566,7 @@ cd shepherd-gui && rm -rf node_modules && npm install
 3. Make your changes
 4. Add tests for new functionality (use the comprehensive test infrastructure)
 5. Run the test suite: `./scripts/run_tests.sh --coverage`
-6. Ensure all tests pass (currently 109 total tests: 94 stable backend + 7 frontend + 8 communication integration tests)
+6. Ensure all tests pass (currently 178+ total tests: 134 previous + 44 conversation compacting system tests)
 7. Run linting: `black src/ tests/` and `cd shepherd-gui && npm run lint`
 8. Submit a pull request
 

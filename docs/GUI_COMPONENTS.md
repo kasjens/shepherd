@@ -93,6 +93,17 @@ This document provides a comprehensive list of all GUI components in the Shepher
 - Support system theme detection
 - Apply theme without page reload
 
+### ConversationCompactor (`/components/features/conversation/conversation-compactor.tsx`)
+**Purpose**: Monitor token usage and manage conversation compacting
+**Actions**:
+- Display real-time token usage with progress bar
+- Show warning indicators at 80% and 90% thresholds
+- Open compacting strategy selection dialog
+- Execute conversation compacting with chosen strategy
+- Display compacting results with before/after statistics
+- Provide WebSocket notifications for auto-compacting suggestions
+- Support five compacting strategies: Auto, Milestone, Selective, Aggressive, Conservative
+
 ## UI Components (Base)
 
 ### Button (`/components/ui/button.tsx`)
@@ -317,7 +328,7 @@ This document provides a comprehensive list of all GUI components in the Shepher
 ## State Management
 
 ### Stores (using Zustand)
-- **useConversationStore**: Manage chat conversations
+- **useConversationStore**: Manage chat conversations and token usage monitoring
 - **useArtifactStore**: Handle artifacts lifecycle
 - **useSettingsStore**: Application preferences
 - **useProjectStore**: Project folder and context

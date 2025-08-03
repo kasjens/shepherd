@@ -20,6 +20,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from src.core.orchestrator import IntelligentOrchestrator
 from src.core.models import ExecutionStatus
 from src.utils.logger import get_logger
+from api.conversation_manager import router as conversation_router
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -236,6 +237,9 @@ async def get_status():
         "active_connections": len(manager.active_connections),
         "timestamp": datetime.now().isoformat()
     }
+
+# Include conversation management router
+app.include_router(conversation_router)
 
 if __name__ == "__main__":
     import uvicorn
