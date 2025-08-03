@@ -173,24 +173,74 @@ class PromptAnalyzer:
                           iterative: bool) -> WorkflowPattern:
         pattern_scores = {}
         
+        # Calculate base scores from text indicators
         for pattern, indicators in self.pattern_indicators.items():
             score = sum(1 for indicator in indicators if indicator in text)
             pattern_scores[pattern] = score
         
-        if dependencies and not parallel:
+        # Enhanced logic for advanced patterns
+        
+        # Hierarchical pattern detection
+        hierarchical_indicators = [
+            "team", "teams", "manager", "lead", "coordinate", "oversee",
+            "delegate", "manage", "supervise", "organize", "multiple teams",
+            "different groups", "specialists", "experts", "roles"
+        ]
+        hierarchical_score = sum(1 for indicator in hierarchical_indicators if indicator in text)
+        if hierarchical_score > 0:
+            pattern_scores[WorkflowPattern.HIERARCHICAL] += hierarchical_score
+            
+        # Additional complexity-based hierarchical detection
+        word_count = len(text.split())
+        if word_count > 50:  # Complex requests may benefit from hierarchical approach
+            pattern_scores[WorkflowPattern.HIERARCHICAL] += 1
+            
+        # Conditional pattern enhancement
+        conditional_indicators = [
+            "if", "when", "depending on", "based on", "choose", "select",
+            "decide", "either", "or", "case", "scenario", "situation",
+            "condition", "whether", "options", "alternatives"
+        ]
+        conditional_score = sum(1 for indicator in conditional_indicators if indicator in text)
+        if conditional_score > 1:  # Multiple conditional indicators
+            pattern_scores[WorkflowPattern.CONDITIONAL] += conditional_score
+            
+        # Iterative pattern enhancement
+        iterative_indicators = [
+            "until", "repeat", "iterate", "refine", "improve", "optimize",
+            "enhance", "perfect", "quality", "better", "version", "revision",
+            "feedback", "adjust", "modify", "polish"
+        ]
+        iterative_score = sum(1 for indicator in iterative_indicators if indicator in text)
+        if iterative_score > 1:
+            pattern_scores[WorkflowPattern.ITERATIVE] += iterative_score
+        
+        # Apply boolean-based scoring
+        if dependencies and not parallel and not conditional:
             pattern_scores[WorkflowPattern.SEQUENTIAL] += 2
-        if parallel and not dependencies:
+        if parallel and not dependencies and not conditional:
             pattern_scores[WorkflowPattern.PARALLEL] += 2
         if conditional:
             pattern_scores[WorkflowPattern.CONDITIONAL] += 2
         if iterative:
             pattern_scores[WorkflowPattern.ITERATIVE] += 2
-        
-        if sum([dependencies, parallel, conditional, iterative]) >= 3:
+            
+        # Complex multi-pattern scenarios
+        active_patterns = sum([dependencies, parallel, conditional, iterative])
+        if active_patterns >= 3:
             return WorkflowPattern.HYBRID
-        
+            
+        # High complexity with multiple task types suggests hierarchical
+        complexity_score = self._calculate_complexity(text)
+        task_types = self._identify_task_types(text)
+        if complexity_score > 0.7 and len(task_types) > 2:
+            pattern_scores[WorkflowPattern.HIERARCHICAL] += 2
+            
+        # Select highest scoring pattern
         if pattern_scores:
-            return max(pattern_scores.items(), key=lambda x: x[1])[0]
+            max_score = max(pattern_scores.values())
+            if max_score > 0:
+                return max(pattern_scores.items(), key=lambda x: x[1])[0]
         
         return WorkflowPattern.SEQUENTIAL
     

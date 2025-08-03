@@ -11,9 +11,10 @@ Shepherd is an intelligent multi-agent system that automatically determines the 
 ### Key Features
 
 - 🧠 **Intelligent Prompt Analysis** - Automatically analyzes complexity, urgency, and task requirements
-- 🔀 **Dynamic Workflow Selection** - Chooses optimal patterns (Sequential, Parallel, Conditional, etc.)
-- 🤖 **Multi-Agent Orchestration** - Creates and coordinates specialized AI agents
+- 🔀 **Advanced Workflow Patterns** - Conditional branching, iterative refinement, hierarchical delegation
+- 🤖 **Multi-Agent Orchestration** - Creates and coordinates specialized AI agents with team structures
 - 🔧 **Tool Use Integration** - Execute external tools, APIs, and code for enhanced capabilities
+- 🧩 **Semantic Memory System** - Vector-based learning with pattern recognition and failure avoidance
 - 💬 **Conversation Compacting** - Unlimited conversation length with intelligent context preservation
 - 🖥️ **Multiple Interfaces** - Modern TypeScript desktop GUI with Tauri, FastAPI backend, and command-line modes
 - 🛡️ **Safety-First Design** - Built-in validation and error handling
@@ -100,13 +101,14 @@ Shepherd analyzes your natural language request to determine:
 - **Dependencies** - Do tasks need to run in sequence?
 - **Parallel Potential** - Can work be done simultaneously?
 
-### 2. Workflow Selection
-Based on the analysis, Shepherd selects the optimal workflow pattern:
+### 2. Advanced Workflow Selection
+Based on the analysis, Shepherd intelligently selects the optimal workflow pattern:
 - **Sequential** - Tasks that must run one after another
-- **Parallel** - Independent tasks that can run simultaneously
-- **Conditional** - Different paths based on conditions
-- **Iterative** - Repeated refinement until quality goals are met
-- **Hierarchical** - Complex coordination with specialized teams
+- **Parallel** - Independent tasks that can run simultaneously  
+- **Conditional** - Dynamic branching based on context evaluation and conditions
+- **Iterative** - Quality-driven refinement with convergence criteria until standards are met
+- **Hierarchical** - Multi-level team coordination with executive management and specialist delegation
+- **Hybrid** - Complex scenarios combining multiple patterns
 
 ### 3. Agent Creation
 Shepherd creates specialized AI agents based on detected task types:
@@ -146,10 +148,12 @@ shepherd/
 │   │   ├── task_agent.py         # Specialized task agents
 │   │   ├── system_agent.py       # System operations agent
 │   │   └── agent_factory.py      # Agent creation logic
-│   ├── memory/                   # Three-tier memory system (Phases 2 & 5)
+│   ├── memory/                   # Three-tier memory system (Phases 2, 5 & 7)
 │   │   ├── base.py              # Memory interface and base classes
 │   │   ├── local_memory.py      # Agent-local memory with LRU eviction
 │   │   ├── shared_context.py    # Shared context pool with pub/sub
+│   │   ├── vector_store.py      # Vector-based semantic memory (Phase 7)
+│   │   ├── persistent_knowledge.py # Persistent knowledge base (Phase 7)
 │   │   ├── conversation_compactor.py # Conversation compacting engine (Phase 5)
 │   │   └── context_preservation.py   # Context preservation strategy (Phase 5)
 │   ├── communication/            # Agent communication system (Phase 3)
@@ -161,10 +165,13 @@ shepherd/
 │   │   ├── registry.py          # Tool discovery and permissions
 │   │   ├── execution_engine.py  # Tool execution with monitoring
 │   │   └── core/                # Built-in tool implementations
-│   ├── workflows/                # Workflow implementations
+│   ├── workflows/                # Workflow implementations (Phases 1 & 6)
 │   │   ├── base_workflow.py      # Workflow base class
 │   │   ├── sequential_workflow.py # Sequential execution
-│   │   └── parallel_workflow.py   # Parallel execution
+│   │   ├── parallel_workflow.py   # Parallel execution
+│   │   ├── conditional_workflow.py # Conditional branching (Phase 6)
+│   │   ├── iterative_workflow.py  # Iterative refinement (Phase 6)
+│   │   └── hierarchical_workflow.py # Hierarchical delegation (Phase 6)
 │   └── utils/                    # Utilities and logging
 │       └── logger.py            # Comprehensive logging system
 ├── shepherd-gui/                 # Modern TypeScript GUI
@@ -186,23 +193,35 @@ shepherd/
 ├── tools/                        # Development and analysis tools
 │   ├── analyze_logs.py          # Log analysis and troubleshooting
 │   └── test_app_mode.py         # Desktop compatibility tester
-├── tests/                        # Comprehensive test infrastructure (Phases 1-4)
-│   ├── unit/                    # Unit tests (94+ tests total)
-│   │   ├── memory/              # Memory system tests (31 tests, Phase 2)
-│   │   ├── communication/       # Communication tests (17 tests, Phase 3)
-│   │   └── tools/               # Tool system tests (20 tests, Phase 4)
-│   ├── integration/             # Integration tests (11+ tests)
+├── tests/                        # Comprehensive test infrastructure (Phases 1-7)
+│   ├── unit/                    # Unit tests (240+ tests total)
+│   │   ├── memory/              # Memory system tests (76 tests, Phases 2, 5, 7)
+│   │   ├── communication/       # Communication tests (17 tests, Phase 3)  
+│   │   ├── tools/               # Tool system tests (20 tests, Phase 4)
+│   │   └── workflows/           # Advanced workflow tests (68 tests, Phase 6)
+│   ├── integration/             # Integration tests (45+ tests)
 │   │   ├── test_memory_integration.py    # Memory system integration
 │   │   ├── test_agent_communication.py  # Agent communication integration
-│   │   └── test_basic_tool_integration.py # Tool system integration
+│   │   ├── test_basic_tool_integration.py # Tool system integration
+│   │   ├── test_conversation_compacting_integration.py # Conversation compacting
+│   │   ├── test_advanced_workflows_integration.py # Advanced workflow integration
+│   │   └── test_vector_memory_integration.py # Vector memory integration (Phase 7)
 │   ├── test_infrastructure.py   # 32 infrastructure validation tests
 │   ├── conftest.py              # pytest configuration and fixtures
 │   └── fixtures/                # Mock agents and sample data
 ├── docs/                         # Documentation
-│   ├── GUI_LAYOUT.md            # GUI design specification
-│   ├── PROPOSED_GUI_APPROACH.md # Architecture decision
-│   ├── IMPLEMENTATION_PLAN.md   # Phase-based development plan
-│   └── PHASE1_COMPLETION_REPORT.md # Test infrastructure results
+│   ├── IMPLEMENTATION_PLAN.md   # Phase-based development plan (Phases 1-7 complete)
+│   ├── PHASE1_COMPLETION_REPORT.md # Test infrastructure results
+│   ├── PHASE2_COMPLETION_REPORT.md # Memory system implementation
+│   ├── PHASE3_COMPLETION_REPORT.md # Agent communication system
+│   ├── PHASE4_COMPLETION_REPORT.md # Tool use foundation
+│   ├── PHASE5_COMPLETION_REPORT.md # Conversation compacting system
+│   ├── PHASE6_COMPLETION_REPORT.md # Advanced workflow patterns
+│   ├── PHASE7_COMPLETION_REPORT.md # Vector memory implementation
+│   ├── AGENT_COLLABORATION.md   # Agent collaboration and memory design
+│   ├── GUI_COMPONENTS.md        # Complete GUI component documentation
+│   ├── GUI_LAYOUT.md            # 3-panel layout specification
+│   └── THEME_DESIGN.md          # Visual design system
 ├── logs/                         # Application logs (auto-created)
 ├── main.py                       # CLI entry point
 ├── requirements.txt              # Python dependencies
@@ -232,11 +251,13 @@ shepherd/
 - Supports extensible agent types through registry pattern
 - Handles agent lifecycle and resource management
 
-#### Agent Memory System (`src/memory/`) - Phase 2
+#### Agent Memory System (`src/memory/`) - Phases 2, 5, 7
 - **BaseMemory**: Abstract interface for all memory implementations
 - **AgentLocalMemory**: Short-term, task-specific storage with LRU eviction
 - **SharedContextPool**: Medium-term collaboration with pub/sub notifications
-- Agent memory integration enables context sharing and discovery collaboration
+- **VectorMemoryStore**: Semantic similarity search with ChromaDB and sentence transformers
+- **PersistentKnowledgeBase**: Long-term learning with six knowledge categories
+- Agent memory integration enables context sharing, discovery collaboration, and semantic learning
 
 #### Agent Communication System (`src/communication/`) - Phase 3
 - **CommunicationManager**: Async message routing and conversation tracking
@@ -250,11 +271,14 @@ shepherd/
 - **BaseAgent Integration**: Tool access with validation and memory integration
 - Built-in tools for computation, web search, file operations, and code execution
 
-#### Workflow Implementations (`src/workflows/`)
+#### Advanced Workflow Implementations (`src/workflows/`) - Phase 6
 - **BaseWorkflow**: Abstract base with common functionality
 - **SequentialWorkflow**: Executes tasks in order with dependency handling
 - **ParallelWorkflow**: Concurrent execution with thread pool management
-- Extensible architecture for additional patterns (Conditional, Iterative, etc.)
+- **ConditionalWorkflow**: Dynamic branching based on context evaluation and conditions
+- **IterativeWorkflow**: Quality-driven refinement with convergence criteria and improvement feedback
+- **HierarchicalWorkflow**: Multi-level team coordination with executive management and specialist delegation
+- Extensible architecture supporting hybrid patterns and custom workflow implementations
 
 ### Data Models (`src/core/models.py`)
 
@@ -435,7 +459,7 @@ Use the built-in log analyzer for troubleshooting:
 - **System Events**: Startup, configuration, resource usage
 - **Errors**: Full stack traces, context information, recovery attempts
 
-## Current Status: Phase 5 Complete
+## Current Status: Phase 7 Complete
 
 ### ✅ Phase 1 Completed: Test Infrastructure
 - **Comprehensive test infrastructure** with 32 backend tests and 7 frontend tests
@@ -491,17 +515,32 @@ Use the built-in log analyzer for troubleshooting:
 - **Complete API integration** with RESTful endpoints and background task support
 - **Comprehensive testing** with 44 tests covering all compacting scenarios and strategies
 
-### 🚧 Phase 6: Advanced Workflow Patterns (Next)
-- **Tool-integrated conditional workflows** requiring agent and tool coordination
-- **Iterative workflows with tool-based convergence** detection and optimization
-- **Hierarchical agent coordination** with tool delegation capabilities
-- **Dynamic workflow adaptation** based on tool execution results and agent collaboration
+### ✅ Phase 6 Completed: Advanced Workflow Patterns
+- **ConditionalWorkflow** with dynamic branching based on context evaluation and intelligent condition functions
+- **IterativeWorkflow** with quality-driven convergence, improvement feedback, and multiple convergence strategies
+- **HierarchicalWorkflow** with multi-level team coordination, executive management, and specialist delegation
+- **Enhanced PromptAnalyzer** with sophisticated pattern detection using 20+ advanced indicators
+- **Complete WorkflowSelector** with registry and configuration for all workflow patterns including hybrid scenarios
+- **Comprehensive testing** with 87 tests covering all patterns, integration scenarios, and error handling
+
+### ✅ Phase 7 Completed: Vector Memory Implementation
+- **VectorMemoryStore** with ChromaDB integration and sentence transformer embeddings for semantic similarity search
+- **PersistentKnowledgeBase** with six knowledge types (learned patterns, user preferences, failure patterns, etc.)
+- **Enhanced BaseAgent** with vector memory integration including pattern learning and knowledge-enhanced task execution
+- **Semantic search capabilities** with configurable similarity thresholds and cross-knowledge-type search
+- **Complete integration** with existing three-tier memory architecture maintaining full backwards compatibility
+- **Comprehensive testing** with 60 tests covering vector storage, knowledge management, and agent integration
+
+### 🚧 Phase 8: Learning Systems Enhancement (Next)
+- **Advanced learning algorithms** for pattern optimization and adaptation
+- **Reinforcement learning** integration for agent behavior improvement
+- **Meta-learning** capabilities for learning how to learn more effectively
+- **User feedback integration** for continuous system improvement
 
 ### 🔮 Future Phases
-- **Phase 6**: Vector Memory Implementation with semantic search and embeddings
-- **Phase 7**: Learning from user feedback and workflow optimization
-- **Phase 8**: Advanced agent specialization and domain expertise
-- **Phase 9**: Enterprise features (multi-user, audit logging, advanced API)
+- **Phase 9**: Advanced agent specialization and domain expertise
+- **Phase 10**: Enterprise features (multi-user, audit logging, advanced API)
+- **Phase 11**: Advanced workflow orchestration and optimization
 
 ## Troubleshooting
 
@@ -566,7 +605,7 @@ cd shepherd-gui && rm -rf node_modules && npm install
 3. Make your changes
 4. Add tests for new functionality (use the comprehensive test infrastructure)
 5. Run the test suite: `./scripts/run_tests.sh --coverage`
-6. Ensure all tests pass (currently 178+ total tests: 134 previous + 44 conversation compacting system tests)
+6. Ensure all tests pass (currently 323+ total tests: 263 previous + 60 vector memory system tests)
 7. Run linting: `black src/ tests/` and `cd shepherd-gui && npm run lint`
 8. Submit a pull request
 

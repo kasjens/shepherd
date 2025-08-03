@@ -10,6 +10,7 @@ import fnmatch
 import logging
 
 from .base import BaseMemory
+from .vector_store import VectorMemoryStore
 
 logger = logging.getLogger(__name__)
 
@@ -28,14 +29,16 @@ class SharedContextPool(BaseMemory):
     The shared context is cleared at the end of each workflow/conversation.
     """
     
-    def __init__(self, workflow_id: Optional[str] = None):
+    def __init__(self, workflow_id: Optional[str] = None, enable_vector_search: bool = False):
         """
         Initialize shared context pool.
         
         Args:
             workflow_id: Optional workflow identifier for context isolation
+            enable_vector_search: Whether to enable vector-based semantic search
         """
         self.workflow_id = workflow_id or "default"
+        self.enable_vector_search = enable_vector_search
         
         # Main context storage
         self.conversation_context: Dict[str, Dict[str, Any]] = {}
@@ -54,6 +57,19 @@ class SharedContextPool(BaseMemory):
             "total_updates": 0,
             "active_agents": set()
         }
+        
+        # Optional vector memory for semantic search
+        self.vector_store: Optional[VectorMemoryStore] = None
+        if enable_vector_search:
+            try:
+                self.vector_store = VectorMemoryStore(
+                    collection_name=f"shared_context_{self.workflow_id}",
+                    persist_directory=None  # Ephemeral for shared context
+                )
+                logger.debug(f"Enabled vector search for workflow {self.workflow_id}")
+            except Exception as e:
+                logger.warning(f"Failed to initialize vector store: {e}")
+                self.enable_vector_search = False
     
     async def store(self, key: str, data: Any, metadata: Optional[Dict] = None) -> None:
         """Store data in shared context with broadcasting."""

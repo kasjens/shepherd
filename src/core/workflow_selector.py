@@ -2,6 +2,9 @@ from typing import Dict, Any, List
 from .models import PromptAnalysis, WorkflowPattern
 from ..workflows.sequential_workflow import SequentialWorkflow
 from ..workflows.parallel_workflow import ParallelWorkflow
+from ..workflows.conditional_workflow import ConditionalWorkflow
+from ..workflows.iterative_workflow import IterativeWorkflow
+from ..workflows.hierarchical_workflow import HierarchicalWorkflow
 from ..workflows.base_workflow import BaseWorkflow
 
 
@@ -10,6 +13,9 @@ class WorkflowSelector:
         self.workflow_registry = {
             WorkflowPattern.SEQUENTIAL: SequentialWorkflow,
             WorkflowPattern.PARALLEL: ParallelWorkflow,
+            WorkflowPattern.CONDITIONAL: ConditionalWorkflow,
+            WorkflowPattern.ITERATIVE: IterativeWorkflow,
+            WorkflowPattern.HIERARCHICAL: HierarchicalWorkflow,
         }
     
     def select_workflow(self, analysis: PromptAnalysis, original_request: str = "") -> BaseWorkflow:

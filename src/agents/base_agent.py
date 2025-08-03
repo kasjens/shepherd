@@ -4,6 +4,7 @@ from crewai import Agent
 from ..utils.logger import get_logger, log_agent_action
 from ..memory.local_memory import AgentLocalMemory
 from ..memory.shared_context import SharedContextPool
+from ..memory.persistent_knowledge import PersistentKnowledgeBase
 from ..communication.manager import CommunicationManager
 from ..communication.protocols import Message, MessageType, CommunicationProtocol
 from ..tools import tool_registry, execution_engine, ExecutionContext, ToolPermission, ToolResult
@@ -17,7 +18,8 @@ from datetime import datetime
 class BaseAgent(ABC):
     def __init__(self, name: str, role: str, goal: str, backstory: str = "", 
                  shared_context: Optional[SharedContextPool] = None,
-                 comm_manager: Optional[CommunicationManager] = None):
+                 comm_manager: Optional[CommunicationManager] = None,
+                 knowledge_base: Optional[PersistentKnowledgeBase] = None):
         self.id = str(uuid.uuid4())
         self.name = name
         self.role = role
@@ -31,6 +33,7 @@ class BaseAgent(ABC):
         # Initialize memory systems
         self.local_memory = AgentLocalMemory(self.id)
         self.shared_context = shared_context or SharedContextPool()
+        self.knowledge_base = knowledge_base or PersistentKnowledgeBase()
         
         # Initialize communication system
         self.comm_manager = comm_manager
@@ -780,3 +783,236 @@ class BaseAgent(ABC):
             "tools_used": tools_used,
             "available_permissions": [p.value for p in self.available_permissions]
         }
+    
+    # Vector Memory and Knowledge Base Methods (Phase 7)
+    
+    async def store_learned_pattern(self, pattern_id: str, pattern: Dict[str, Any],
+                                   success_rate: float = 1.0,
+                                   context: Optional[Dict] = None) -> None:
+        """
+        Store a learned pattern in the persistent knowledge base.
+        
+        Args:
+            pattern_id: Unique identifier for the pattern
+            pattern: Pattern data (workflow steps, decisions, etc.)
+            success_rate: Success rate of this pattern (0.0 to 1.0)
+            context: Context in which this pattern was successful
+        """
+        try:
+            await self.knowledge_base.store_learned_pattern(
+                pattern_id, pattern, success_rate, context
+            )
+            self.logger.debug(f"Stored learned pattern: {pattern_id}")
+        except Exception as e:
+            self.logger.error(f"Failed to store learned pattern {pattern_id}: {e}")
+    
+    async def find_similar_patterns(self, context: str, limit: int = 5,
+                                   min_similarity: float = 0.6) -> List[Dict[str, Any]]:
+        """
+        Find patterns similar to the current context.
+        
+        Args:
+            context: Description of current context or task
+            limit: Maximum number of patterns to return
+            min_similarity: Minimum similarity threshold
+            
+        Returns:
+            List of similar patterns with similarity scores
+        """
+        try:
+            return await self.knowledge_base.find_similar_patterns(
+                context, "learned", limit, min_similarity
+            )
+        except Exception as e:
+            self.logger.error(f"Failed to find similar patterns: {e}")
+            return []
+    
+    async def check_failure_patterns(self, context: str, limit: int = 3) -> List[Dict[str, Any]]:
+        """
+        Check for failure patterns that might apply to the current context.
+        
+        Args:
+            context: Description of current context or planned action
+            limit: Maximum number of failure patterns to check
+            
+        Returns:
+            List of relevant failure patterns to avoid
+        """
+        try:
+            return await self.knowledge_base.check_failure_patterns(context, limit)
+        except Exception as e:
+            self.logger.error(f"Failed to check failure patterns: {e}")
+            return []
+    
+    async def store_user_preference(self, preference_id: str, preference: Dict[str, Any],
+                                   strength: float = 1.0, context: Optional[str] = None) -> None:
+        """
+        Store a user preference for future reference.
+        
+        Args:
+            preference_id: Unique identifier for the preference
+            preference: Preference data
+            strength: Strength of the preference (0.0 to 1.0)
+            context: Context where this preference applies
+        """
+        try:
+            await self.knowledge_base.store_user_preference(
+                preference_id, preference, strength, context
+            )
+            self.logger.debug(f"Stored user preference: {preference_id}")
+        except Exception as e:
+            self.logger.error(f"Failed to store user preference {preference_id}: {e}")
+    
+    async def find_user_preferences(self, context: str, limit: int = 10) -> List[Dict[str, Any]]:
+        """
+        Find user preferences relevant to the current context.
+        
+        Args:
+            context: Current context or task description
+            limit: Maximum number of preferences to return
+            
+        Returns:
+            List of relevant user preferences
+        """
+        try:
+            return await self.knowledge_base.find_user_preferences(context, limit)
+        except Exception as e:
+            self.logger.error(f"Failed to find user preferences: {e}")
+            return []
+    
+    async def store_execution_outcome(self, task_description: str, outcome: Dict[str, Any],
+                                     success: bool, error: Optional[str] = None) -> None:
+        """
+        Store the outcome of a task execution for learning.
+        
+        Args:
+            task_description: Description of the task executed
+            outcome: Result data from the execution
+            success: Whether the execution was successful
+            error: Error message if execution failed
+        """
+        try:
+            if success:
+                # Store as learned pattern
+                pattern_id = f"execution_{self.name}_{int(time.time())}"
+                pattern = {
+                    "agent_type": self.__class__.__name__,
+                    "agent_role": self.role,
+                    "task_description": task_description,
+                    "outcome": outcome,
+                    "execution_time": outcome.get("execution_time", 0),
+                    "tools_used": outcome.get("tools_used", [])
+                }
+                await self.store_learned_pattern(pattern_id, pattern, 1.0, {
+                    "agent_name": self.name,
+                    "task_type": self.role
+                })
+            else:
+                # Store as failure pattern
+                failure_id = f"failure_{self.name}_{int(time.time())}"
+                failure_data = {
+                    "agent_type": self.__class__.__name__,
+                    "agent_role": self.role,
+                    "task_description": task_description,
+                    "error": error,
+                    "outcome": outcome,
+                    "timestamp": datetime.now().isoformat(),
+                    "severity": "high" if "critical" in str(error).lower() else "medium"
+                }
+                await self.knowledge_base.store_failure_pattern(failure_id, failure_data)
+                
+        except Exception as e:
+            self.logger.error(f"Failed to store execution outcome: {e}")
+    
+    async def enhance_task_with_knowledge(self, task_description: str) -> Dict[str, Any]:
+        """
+        Enhance a task with relevant knowledge from the knowledge base.
+        
+        Args:
+            task_description: Description of the task to enhance
+            
+        Returns:
+            Dictionary with enhancement data including patterns, preferences, and warnings
+        """
+        try:
+            enhancement = {
+                "similar_patterns": [],
+                "user_preferences": [],
+                "failure_warnings": [],
+                "recommendations": []
+            }
+            
+            # Find similar successful patterns
+            patterns = await self.find_similar_patterns(task_description, limit=3)
+            enhancement["similar_patterns"] = patterns
+            
+            # Get relevant user preferences
+            preferences = await self.find_user_preferences(task_description, limit=5)
+            enhancement["user_preferences"] = preferences
+            
+            # Check for potential failure patterns
+            failures = await self.check_failure_patterns(task_description, limit=2)
+            enhancement["failure_warnings"] = failures
+            
+            # Generate recommendations based on knowledge
+            if patterns:
+                enhancement["recommendations"].append(
+                    f"Found {len(patterns)} similar successful patterns. "
+                    f"Consider using similar approaches."
+                )
+            
+            if preferences:
+                enhancement["recommendations"].append(
+                    f"Found {len(preferences)} relevant user preferences. "
+                    f"Ensure execution aligns with user expectations."
+                )
+            
+            if failures:
+                enhancement["recommendations"].append(
+                    f"Warning: Found {len(failures)} potential failure patterns. "
+                    f"Review these carefully to avoid known issues."
+                )
+            
+            return enhancement
+            
+        except Exception as e:
+            self.logger.error(f"Failed to enhance task with knowledge: {e}")
+            return {
+                "similar_patterns": [],
+                "user_preferences": [],
+                "failure_warnings": [],
+                "recommendations": ["Knowledge enhancement unavailable due to error"]
+            }
+    
+    async def semantic_memory_search(self, query: str, memory_types: Optional[List[str]] = None,
+                                    limit: int = 10, min_similarity: float = 0.5) -> List[Dict[str, Any]]:
+        """
+        Perform semantic search across memory systems.
+        
+        Args:
+            query: Text query for semantic search
+            memory_types: Optional list of memory types to search
+            limit: Maximum number of results
+            min_similarity: Minimum similarity threshold
+            
+        Returns:
+            List of semantically similar memory entries
+        """
+        try:
+            # Search knowledge base
+            kb_results = await self.knowledge_base.search({
+                "text": query,
+                "limit": limit,
+                "min_similarity": min_similarity,
+                "knowledge_types": memory_types
+            })
+            
+            # Add source annotation
+            for result in kb_results:
+                result["source"] = "knowledge_base"
+            
+            return kb_results
+            
+        except Exception as e:
+            self.logger.error(f"Failed to perform semantic memory search: {e}")
+            return []
