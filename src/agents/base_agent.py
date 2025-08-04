@@ -5,10 +5,14 @@ from ..utils.logger import get_logger, log_agent_action
 from ..memory.local_memory import AgentLocalMemory
 from ..memory.shared_context import SharedContextPool
 from ..memory.persistent_knowledge import PersistentKnowledgeBase
+from ..memory.vector_store import VectorMemoryStore
 from ..communication.manager import CommunicationManager
 from ..communication.protocols import Message, MessageType, CommunicationProtocol
 from ..tools import tool_registry, execution_engine, ExecutionContext, ToolPermission, ToolResult
 from ..tools.core import FileOperationsTool
+from ..learning.feedback_processor import UserFeedbackProcessor, FeedbackType
+from ..learning.pattern_learner import PatternLearner
+from ..learning.adaptive_system import AdaptiveBehaviorSystem
 import time
 import uuid
 import asyncio
@@ -19,7 +23,9 @@ class BaseAgent(ABC):
     def __init__(self, name: str, role: str, goal: str, backstory: str = "", 
                  shared_context: Optional[SharedContextPool] = None,
                  comm_manager: Optional[CommunicationManager] = None,
-                 knowledge_base: Optional[PersistentKnowledgeBase] = None):
+                 knowledge_base: Optional[PersistentKnowledgeBase] = None,
+                 vector_store: Optional[VectorMemoryStore] = None,
+                 enable_learning: bool = True):
         self.id = str(uuid.uuid4())
         self.name = name
         self.role = role
@@ -34,6 +40,20 @@ class BaseAgent(ABC):
         self.local_memory = AgentLocalMemory(self.id)
         self.shared_context = shared_context or SharedContextPool()
         self.knowledge_base = knowledge_base or PersistentKnowledgeBase()
+        self.vector_store = vector_store
+        
+        # Initialize learning systems (Phase 8)
+        self.enable_learning = enable_learning
+        if self.enable_learning:
+            self.feedback_processor = UserFeedbackProcessor(self.knowledge_base)
+            self.pattern_learner = PatternLearner(self.knowledge_base)
+            self.adaptive_system = AdaptiveBehaviorSystem(self.knowledge_base, self.vector_store)
+            self.logger.info(f"Learning systems enabled for agent {self.name}")
+        else:
+            self.feedback_processor = None
+            self.pattern_learner = None
+            self.adaptive_system = None
+            self.logger.info(f"Learning systems disabled for agent {self.name}")
         
         # Initialize communication system
         self.comm_manager = comm_manager
@@ -1016,3 +1036,233 @@ class BaseAgent(ABC):
         except Exception as e:
             self.logger.error(f"Failed to perform semantic memory search: {e}")
             return []
+    
+    # Learning System Methods (Phase 8)
+    
+    async def process_user_feedback(self, feedback_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Process user feedback to improve future performance.
+        
+        Args:
+            feedback_data: Feedback containing type, content, context, etc.
+            
+        Returns:
+            Processing result with applied changes and recommendations
+        """
+        if not self.enable_learning or not self.feedback_processor:
+            self.logger.warning("Learning systems disabled - cannot process feedback")
+            return {'success': False, 'reason': 'learning_disabled'}
+        
+        try:
+            result = await self.feedback_processor.process_feedback(feedback_data)
+            self.logger.info(f"Processed user feedback: {feedback_data.get('type', 'unknown')}")
+            return result
+        except Exception as e:
+            self.logger.error(f"Failed to process user feedback: {e}")
+            return {'success': False, 'error': str(e)}
+    
+    async def learn_from_workflow_result(self, workflow_result) -> Dict[str, Any]:
+        """
+        Learn patterns from completed workflow execution.
+        
+        Args:
+            workflow_result: WorkflowResult object containing execution details
+            
+        Returns:
+            Learning analysis results
+        """
+        if not self.enable_learning or not self.pattern_learner:
+            return {'learned': False, 'reason': 'learning_disabled'}
+        
+        try:
+            # Learn from successful patterns
+            success_result = await self.pattern_learner.analyze_workflow_success(workflow_result)
+            
+            # Also analyze failures to avoid them
+            failure_result = await self.pattern_learner.analyze_failure_patterns(workflow_result)
+            
+            return {
+                'success_analysis': success_result,
+                'failure_analysis': failure_result,
+                'learned': True
+            }
+        except Exception as e:
+            self.logger.error(f"Failed to learn from workflow result: {e}")
+            return {'learned': False, 'error': str(e)}
+    
+    async def get_adaptive_context(self, base_context: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Get context enhanced with adaptive behaviors based on learning.
+        
+        Args:
+            base_context: Original execution context
+            
+        Returns:
+            Enhanced context with adaptive behaviors applied
+        """
+        if not self.enable_learning or not self.adaptive_system:
+            return base_context
+        
+        try:
+            # Get available adaptations
+            adaptations_result = await self.adaptive_system.get_adaptations(base_context)
+            adaptations = adaptations_result.get('adaptations', [])
+            
+            if not adaptations:
+                self.logger.debug("No adaptations found for current context")
+                return base_context
+            
+            # Apply selected adaptations
+            enhanced_context = await self.adaptive_system.apply_adaptations(
+                base_context, 
+                adaptations[:3]  # Apply top 3 adaptations
+            )
+            
+            self.logger.info(f"Applied {len(adaptations[:3])} adaptations to context")
+            return enhanced_context
+            
+        except Exception as e:
+            self.logger.error(f"Failed to get adaptive context: {e}")
+            return base_context
+    
+    async def provide_feedback_on_execution(self, task_description: str, 
+                                          execution_result: Dict[str, Any],
+                                          user_rating: Optional[float] = None) -> None:
+        """
+        Provide feedback on task execution for learning purposes.
+        
+        Args:
+            task_description: Description of the executed task
+            execution_result: Results of the execution
+            user_rating: Optional user rating (0.0 to 1.0)
+        """
+        if not self.enable_learning:
+            return
+        
+        # Create feedback data
+        feedback_data = {
+            'type': 'rating',
+            'task_description': task_description,
+            'execution_result': execution_result,
+            'agent_id': self.id,
+            'agent_name': self.name,
+            'timestamp': datetime.utcnow().isoformat()
+        }
+        
+        if user_rating is not None:
+            feedback_data['score'] = user_rating
+            feedback_data['max_score'] = 1.0
+        else:
+            # Auto-generate rating based on execution success
+            if execution_result.get('status') == 'completed':
+                feedback_data['score'] = 0.8
+            elif execution_result.get('status') == 'partial':
+                feedback_data['score'] = 0.5
+            else:
+                feedback_data['score'] = 0.2
+        
+        # Process the feedback
+        await self.process_user_feedback(feedback_data)
+    
+    async def get_pattern_recommendations(self, context: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """
+        Get pattern recommendations for the given context.
+        
+        Args:
+            context: Current execution context
+            
+        Returns:
+            List of recommended patterns with confidence scores
+        """
+        if not self.enable_learning or not self.pattern_learner:
+            return []
+        
+        try:
+            recommendations = await self.pattern_learner.get_pattern_recommendations(context)
+            self.logger.debug(f"Found {len(recommendations)} pattern recommendations")
+            return recommendations
+        except Exception as e:
+            self.logger.error(f"Failed to get pattern recommendations: {e}")
+            return []
+    
+    async def record_adaptation_outcome(self, adaptation_name: str, 
+                                      success: bool, 
+                                      performance_score: float) -> None:
+        """
+        Record the outcome of applying an adaptation for future learning.
+        
+        Args:
+            adaptation_name: Name of the adaptation that was applied
+            success: Whether the execution was successful
+            performance_score: Performance score (0-1)
+        """
+        if not self.enable_learning or not self.adaptive_system:
+            return
+        
+        try:
+            await self.adaptive_system.record_adaptation_outcome(
+                adaptation_name, success, performance_score
+            )
+            self.logger.debug(f"Recorded adaptation outcome: {adaptation_name} = {performance_score}")
+        except Exception as e:
+            self.logger.error(f"Failed to record adaptation outcome: {e}")
+    
+    async def get_learning_insights(self) -> Dict[str, Any]:
+        """
+        Get insights about the agent's learning progress and performance.
+        
+        Returns:
+            Dictionary containing learning statistics and insights
+        """
+        if not self.enable_learning:
+            return {'learning_enabled': False}
+        
+        insights = {'learning_enabled': True}
+        
+        try:
+            # Feedback processing insights
+            if self.feedback_processor:
+                feedback_summary = await self.feedback_processor.get_feedback_summary()
+                insights['feedback_processing'] = feedback_summary
+            
+            # Pattern learning insights
+            if self.pattern_learner:
+                learning_summary = await self.pattern_learner.get_learning_summary()
+                insights['pattern_learning'] = learning_summary
+            
+            # Adaptive behavior insights
+            if self.adaptive_system:
+                adaptation_stats = await self.adaptive_system.get_adaptation_statistics()
+                insights['adaptive_behavior'] = adaptation_stats
+            
+            return insights
+            
+        except Exception as e:
+            self.logger.error(f"Failed to get learning insights: {e}")
+            return {'learning_enabled': True, 'error': str(e)}
+    
+    def enable_learning_systems(self) -> None:
+        """Enable learning systems for this agent."""
+        if not self.enable_learning:
+            self.enable_learning = True
+            self.feedback_processor = UserFeedbackProcessor(self.knowledge_base)
+            self.pattern_learner = PatternLearner(self.knowledge_base)
+            self.adaptive_system = AdaptiveBehaviorSystem(self.knowledge_base, self.vector_store)
+            self.logger.info(f"Learning systems enabled for agent {self.name}")
+    
+    def disable_learning_systems(self) -> None:
+        """Disable learning systems for this agent."""
+        if self.enable_learning:
+            self.enable_learning = False
+            self.feedback_processor = None
+            self.pattern_learner = None
+            self.adaptive_system = None
+            self.logger.info(f"Learning systems disabled for agent {self.name}")
+    
+    def is_learning_enabled(self) -> bool:
+        """Check if learning systems are enabled."""
+        return self.enable_learning and all([
+            self.feedback_processor is not None,
+            self.pattern_learner is not None,
+            self.adaptive_system is not None
+        ])

@@ -68,6 +68,19 @@ global.ResizeObserver = class ResizeObserver {
   }
 }
 
+// Mock WebSocket
+global.WebSocket = class WebSocket {
+  constructor(url) {
+    this.url = url
+    this.onopen = null
+    this.onmessage = null
+    this.onclose = null
+    this.onerror = null
+  }
+  close() {}
+  send() {}
+}
+
 // Suppress console errors during tests (optional)
 const originalError = console.error
 beforeAll(() => {

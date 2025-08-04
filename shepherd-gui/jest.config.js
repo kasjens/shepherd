@@ -11,6 +11,7 @@ const customJestConfig = {
   testEnvironment: 'jest-environment-jsdom',
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    'framer-motion': '<rootDir>/__tests__/__mocks__/framer-motion.js',
   },
   collectCoverageFrom: [
     'src/**/*.{js,jsx,ts,tsx}',

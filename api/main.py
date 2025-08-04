@@ -241,6 +241,50 @@ async def get_status():
 # Include conversation management router
 app.include_router(conversation_router)
 
+# Phase 10: Analytics API Integration
+from src.analytics.collaboration_analyzer import CollaborationAnalyzer
+from src.analytics.predictive_engine import PredictiveEngine
+from src.analytics.metrics_aggregator import MetricsAggregator
+from src.analytics.dashboard_engine import DashboardEngine
+from src.analytics.export_manager import ExportManager
+from api.analytics_manager import AnalyticsManager
+
+# Initialize analytics components
+try:
+    from src.memory.shared_context import SharedContextPool
+    from src.memory.persistent_knowledge import PersistentKnowledgeBase
+    from src.learning.pattern_learner import PatternLearner
+    
+    # Create shared context and knowledge base instances (reuse existing if available)
+    shared_context = SharedContextPool()
+    knowledge_base = PersistentKnowledgeBase()
+    pattern_learner = PatternLearner()
+    
+    # Initialize Phase 10 analytics components
+    collaboration_analyzer = CollaborationAnalyzer(shared_context)
+    predictive_engine = PredictiveEngine(knowledge_base, pattern_learner, shared_context)
+    metrics_aggregator = MetricsAggregator(shared_context)
+    dashboard_engine = DashboardEngine(metrics_aggregator, collaboration_analyzer, predictive_engine, shared_context)
+    export_manager = ExportManager()
+    
+    # Initialize analytics manager
+    analytics_manager = AnalyticsManager(
+        collaboration_analyzer,
+        predictive_engine,
+        metrics_aggregator,
+        dashboard_engine,
+        export_manager
+    )
+    
+    # Include analytics routes
+    app.include_router(analytics_manager.router, tags=["analytics"])
+    logger.info("Phase 10 Analytics system initialized successfully")
+    
+except ImportError as e:
+    logger.warning(f"Analytics system not available: {e}")
+except Exception as e:
+    logger.error(f"Failed to initialize analytics system: {e}")
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

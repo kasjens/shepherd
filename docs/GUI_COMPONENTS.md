@@ -48,6 +48,236 @@ This document provides a comprehensive list of all GUI components in the Shepher
 - Show truncated path for long directories
 
 ### MessageInput (`/components/features/chat/message-input.tsx`)
+**Purpose**: Input interface for user messages and commands
+**Actions**:
+- Multi-line text input with auto-resize
+- Send messages via Enter or button click
+- Command autocomplete and suggestions
+- Emoji picker integration
+- File attachment support
+- Voice input recognition
+
+## Phase 9: Frontend Collaboration UI Components
+
+### Agent Status Components (`/components/features/agents/agent-status.tsx`)
+**Purpose**: Real-time visualization of agent states and performance metrics
+**Components**:
+- `AgentStatusCard`: Individual agent status display with progress indicators
+- `AgentStatusPanel`: Grid view of all active agents with filtering
+- `AgentDetailView`: Expanded view showing detailed agent information
+**Actions**:
+- Display agent status (idle, working, error, completed)
+- Show current task progress with visual indicators
+- Filter agents by status, type, or performance metrics
+- View detailed agent performance statistics
+- Show agent resource usage (CPU, memory)
+- Display agent connections and communication patterns
+- View agent tool usage and capabilities
+
+### Agent Collaboration Components (`/components/features/agents/agent-collaboration.tsx`)
+**Purpose**: Visualization of agent-to-agent interactions and teamwork
+**Actions**:
+- Display agent communication network topology
+- Show message flow between agents in real-time
+- Visualize collaborative task distribution
+- Monitor peer review processes and consensus building
+- Track shared context and knowledge exchange
+
+### Communication Flow Components (`/components/features/agents/communication-flow.tsx`)
+**Purpose**: Real-time visualization of agent communication events
+**Components**:
+- `CommunicationEventItem`: Individual message/event display
+- `CommunicationNetwork`: Network topology of agent connections
+- `CommunicationStatsPanel`: Communication statistics overview
+**Actions**:
+- Stream real-time communication events via WebSocket
+- Filter events by type (request, response, broadcast, peer_review)
+- Show message priorities and response times
+- Display conversation threads and context IDs
+- Pause/resume event streaming
+- View connection strength and activity metrics
+
+### Memory Flow Components (`/components/features/memory/memory-flow.tsx`)
+**Purpose**: Visualization of memory operations across the three-tier architecture
+**Components**:
+- `MemoryFlowVisualizer`: Main memory transfer visualization
+- `MemoryTransferItem`: Individual memory operation display
+- `MemoryUsagePanel`: Per-agent memory usage statistics
+**Actions**:
+- Show memory transfers between agents and storage tiers
+- Display memory usage across local, shared, persistent, and vector tiers
+- Filter transfers by type (discovery, context, learning, knowledge, pattern)
+- Monitor agent subscription patterns to shared contexts
+- View memory operation statistics and trends
+- Pause/resume memory flow monitoring
+
+### Learning Progress Components (`/components/features/learning/learning-progress.tsx`)
+**Purpose**: Visualization of Phase 8 learning system progress and insights
+**Components**:
+- `LearningProgressOverview`: Main dashboard for learning metrics
+- `LearningInsightCard`: Individual learning insight display
+- `FeedbackSummaryPanel`: User feedback statistics and trends
+- `PatternLearningPanel`: Pattern discovery and optimization metrics
+- `AdaptationStatsPanel`: Adaptive behavior statistics
+**Actions**:
+- Display learning insights with confidence scores and recommendations
+- Show feedback processing statistics and trends
+- Visualize pattern learning progress and success rates
+- Monitor adaptive behavior performance tracking
+- Filter insights by type (feedback, pattern, adaptation, performance)
+- Show learning score calculations and trend analysis
+
+### Performance Metrics Components (`/components/features/performance/metrics-dashboard.tsx`)
+**Purpose**: Comprehensive system performance monitoring dashboard
+**Components**:
+- `SystemMetricsPanel`: System resource utilization (CPU, memory, disk, network)
+- `WorkflowMetricsPanel`: Workflow execution statistics and performance
+- `AgentMetricsPanel`: Agent performance and efficiency metrics
+- `PerformanceAlertsPanel`: System alerts and performance warnings
+- `MetricsTrendsPanel`: Performance trends and change indicators
+**Actions**:
+- Monitor real-time system resource usage with visual indicators
+- Track workflow execution success rates and timing
+- Display agent efficiency and task completion metrics
+- Show performance alerts with acknowledgment system
+- Visualize performance trends with improvement/decline indicators
+- Display error rates and common failure patterns
+
+## Phase 10: Advanced Analytics Components
+
+### Analytics Dashboard Components (`/components/features/analytics/analytics-dashboard.tsx`)
+**Purpose**: Advanced analytics visualization and management interface
+**Components**:
+- `AnalyticsDashboard`: Main analytics dashboard container with customizable widgets
+- `WidgetContainer`: Individual widget wrapper with resize and configuration controls
+- `DashboardGrid`: Responsive grid layout system for widget arrangement
+- `DashboardToolbar`: Dashboard management toolbar with save, share, and export options
+**Actions**:
+- Create and manage custom analytics dashboards
+- Drag and drop widget positioning with grid snapping
+- Configure widget data sources and refresh intervals
+- Save dashboard configurations with persistence
+- Share dashboards with team members
+- Export dashboard layouts as templates
+
+### Collaboration Analytics Components (`/components/features/analytics/collaboration-analytics.tsx`)
+**Purpose**: Agent collaboration pattern analysis and visualization
+**Components**:
+- `CollaborationNetworkGraph`: Interactive network topology visualization of agent interactions
+- `CollaborationMetricsPanel`: Key collaboration metrics and KPIs display
+- `InteractionTimelineView`: Chronological view of agent interactions and communications
+- `TeamEfficiencyPanel`: Team performance analysis with collaboration effectiveness scores
+**Actions**:
+- Visualize agent communication networks with interactive graph controls
+- Display collaboration metrics including communication frequency and effectiveness
+- Show interaction patterns over time with timeline scrubbing
+- Analyze team performance with filtering by agent type and time period
+- Export collaboration reports in multiple formats
+- Configure collaboration metric thresholds and alerts
+
+### Predictive Analytics Components (`/components/features/analytics/predictive-analytics.tsx`)
+**Purpose**: Machine learning predictions and insights visualization
+**Components**:
+- `PredictionPanel`: Main predictions display with confidence indicators
+- `WorkflowSuccessPrediction`: Workflow success probability visualization
+- `PerformanceForecast`: Performance predictions with trend analysis
+- `ResourceUsagePrediction`: Resource requirement predictions with capacity planning
+- `RecommendationEngine`: AI-driven recommendations display
+**Actions**:
+- Display workflow success predictions with confidence scores
+- Show performance forecasts with interactive trend lines
+- Visualize resource usage predictions for capacity planning
+- Present AI recommendations with reasoning explanations
+- Configure prediction parameters and model selection
+- Track prediction accuracy over time with validation metrics
+
+### Metrics Aggregator Components (`/components/features/analytics/metrics-aggregator.tsx`)
+**Purpose**: Real-time metrics collection and trend analysis interface
+**Components**:
+- `MetricsOverviewPanel`: High-level metrics summary with key performance indicators
+- `TrendAnalysisChart`: Interactive trend visualization with multiple metrics
+- `AnomalyDetectionPanel`: Anomaly alerts and pattern deviation indicators
+- `HistoricalDataExplorer`: Time-series data exploration with drill-down capabilities
+**Actions**:
+- Monitor real-time system metrics with live updating displays
+- Analyze performance trends with interactive time range selection
+- Display anomaly alerts with automatic pattern deviation detection
+- Explore historical data with zoom and filter capabilities
+- Configure metric collection intervals and retention policies
+- Set up automated alerts for metric threshold breaches
+
+### Export Manager Components (`/components/features/analytics/export-manager.tsx`)
+**Purpose**: Multi-format data export and report generation interface
+**Components**:
+- `ExportWizard`: Step-by-step export configuration interface
+- `ReportTemplateSelector`: Pre-built report template selection with preview
+- `ExportFormatSelector`: Multi-format export options (PDF, CSV, JSON, Excel, HTML, Markdown)
+- `ScheduledExportsPanel`: Automated export scheduling and management
+- `ExportHistoryView`: Export job history with status tracking and download links
+**Actions**:
+- Configure data exports with flexible filtering and date range selection
+- Select from professional report templates with customization options
+- Choose export formats based on intended use (analysis, sharing, archival)
+- Schedule automated exports with configurable frequency and distribution
+- Track export job status with progress indicators and error handling
+- Download completed exports with organized file management
+
+### Analytics Widget Library (`/components/features/analytics/widgets/`)
+**Purpose**: Reusable analytics visualization widgets
+**Widget Types**:
+1. **LineChart Widget** (`line-chart-widget.tsx`): Time-series trend visualization
+2. **BarChart Widget** (`bar-chart-widget.tsx`): Comparative metrics display
+3. **PieChart Widget** (`pie-chart-widget.tsx`): Distribution analysis visualization
+4. **GaugeChart Widget** (`gauge-chart-widget.tsx`): Performance level indicators
+5. **TableWidget** (`table-widget.tsx`): Tabular data with sorting and filtering
+6. **NetworkGraph Widget** (`network-graph-widget.tsx`): Relationship visualization
+7. **Heatmap Widget** (`heatmap-widget.tsx`): Activity pattern visualization
+8. **ProgressBar Widget** (`progress-bar-widget.tsx`): Goal tracking and completion
+9. **StatusIndicator Widget** (`status-indicator-widget.tsx`): System health displays
+
+**Widget Features**:
+- **Real-time Data Streaming**: WebSocket integration for live updates
+- **Interactive Controls**: Zoom, filter, and drill-down capabilities
+- **Customizable Styling**: Theme-aware styling with customization options
+- **Responsive Design**: Adaptive layouts for different screen sizes
+- **Export Capabilities**: Individual widget export to images and data formats
+- **Configuration Panels**: User-friendly widget configuration interfaces
+
+### Analytics API Integration (`/lib/analytics-api.ts`)
+**Purpose**: TypeScript client for Phase 10 analytics system backend
+**Functionality**:
+- Connect to analytics REST endpoints with full type safety
+- Stream real-time analytics data via WebSocket connections
+- Manage dashboard configurations with CRUD operations
+- Generate and track export jobs with status monitoring
+- Access predictive analytics with parameter configuration
+- Retrieve metrics data with flexible querying capabilities
+**Methods**:
+- `getAnalyticsData()`: Retrieve system metrics and performance data
+- `createDashboard()`: Create new custom analytics dashboards
+- `updateWidget()`: Update widget configurations and data sources
+- `generateExport()`: Initiate data exports with format and filter selection
+- `getPredictions()`: Access ML predictions with confidence intervals
+- `streamMetrics()`: Establish WebSocket connections for real-time data
+- `getCollaborationMetrics()`: Retrieve agent collaboration analysis data
+
+## API Integration Components
+
+### Learning API Integration (`/lib/learning-api.ts`)
+**Purpose**: TypeScript client for Phase 8 learning system backend
+**Functionality**:
+- Submit user feedback for processing (6 feedback types supported)
+- Retrieve learning insights and statistics
+- Get pattern recommendations based on context
+- Apply and track adaptive behavior modifications
+- Configure learning settings per agent
+- Monitor system-wide learning statistics
+**Methods**:
+- `submitFeedback()`: Process user corrections, preferences, and guidance
+- `getLearningInsights()`: Retrieve learning progress and metrics
+- `getPatternRecommendations()`: Get workflow optimization suggestions
+- `getAdaptations()`: Retrieve context-specific behavioral adaptations
+- `recordAdaptationOutcome()`: Track adaptation success/failure rates
 **Purpose**: Multi-line input area for user messages
 **Actions**:
 - Type and edit messages with markdown support
