@@ -254,18 +254,20 @@ try:
     from src.memory.shared_context import SharedContextPool
     from src.memory.persistent_knowledge import PersistentKnowledgeBase
     from src.learning.pattern_learner import PatternLearner
+    from src.communication.manager import CommunicationManager
     
     # Create shared context and knowledge base instances (reuse existing if available)
     shared_context = SharedContextPool()
     knowledge_base = PersistentKnowledgeBase()
-    pattern_learner = PatternLearner()
+    pattern_learner = PatternLearner(knowledge_base)
+    communication_manager = CommunicationManager()
     
     # Initialize Phase 10 analytics components
-    collaboration_analyzer = CollaborationAnalyzer(shared_context)
+    collaboration_analyzer = CollaborationAnalyzer(shared_context, communication_manager)
     predictive_engine = PredictiveEngine(knowledge_base, pattern_learner, shared_context)
     metrics_aggregator = MetricsAggregator(shared_context)
     dashboard_engine = DashboardEngine(metrics_aggregator, collaboration_analyzer, predictive_engine, shared_context)
-    export_manager = ExportManager()
+    export_manager = ExportManager(metrics_aggregator, collaboration_analyzer, predictive_engine, dashboard_engine, shared_context)
     
     # Initialize analytics manager
     analytics_manager = AnalyticsManager(

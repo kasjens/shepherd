@@ -251,7 +251,7 @@ EOF
 
 # Parse command line arguments
 parse_args() {
-    MODE="api"  # Default to API server for new GUI
+    MODE="gui"  # Default to GUI (launches both API and desktop app)
     REQUEST=""
     INTERACTIVE=false
     PORT=8000  # Changed to 8000 for FastAPI backend
@@ -303,8 +303,8 @@ show_help() {
     echo
     echo -e "${YELLOW}Options:${NC}"
     echo "  --cli                Run in command-line mode"
-    echo "  --api                Run FastAPI backend server for GUI (default)"
-    echo "  --gui                Launch the new professional desktop GUI"
+    echo "  --api                Run FastAPI backend server only"
+    echo "  --gui                Launch the professional desktop GUI (default)"
     echo "  --interactive, -i    Run in interactive mode (CLI only)"
     echo "  --port, -p PORT      Specify port for API server (default: 8000)"
     echo "  --host, -h HOST      Specify host for API server (default: 0.0.0.0)"
@@ -318,9 +318,9 @@ show_help() {
     echo "    3. Or build desktop app: cd shepherd-gui && npm run tauri:dev"
     echo
     echo -e "${YELLOW}Examples:${NC}"
-    echo "  ./start.sh                                    # Start FastAPI backend (default)"
-    echo "  ./start.sh --api                             # Start FastAPI backend explicitly"
-    echo "  ./start.sh --gui                             # Launch new desktop GUI"
+    echo "  ./start.sh                                    # Launch desktop GUI (default)"
+    echo "  ./start.sh --api                             # Start FastAPI backend only"
+    echo "  ./start.sh --gui                             # Launch desktop GUI explicitly"
     echo "  ./start.sh --api --port 8080                 # Start backend on port 8080"
     echo "  ./start.sh --cli \"Create a todo app\"         # Run CLI with request"
     echo "  ./start.sh --cli --interactive                # Run CLI in interactive mode"

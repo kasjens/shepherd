@@ -1,596 +1,489 @@
 # GUI Components Documentation
 
-This document provides a comprehensive list of all GUI components in the Shepherd application, their purposes, and expected actions.
+This document provides a comprehensive list of all GUI components in the Shepherd application's simplified interface, their purposes, and expected actions.
 
-## Layout Components
+## Core Layout Components
 
-### Sidebar (`/components/layout/sidebar.tsx`)
-**Purpose**: Primary navigation and conversation management panel
+### Sidebar (`/components/layout/sidebar/Sidebar.tsx`)
+**Purpose**: Collapsible control panel for all application controls and settings
+**Sections**:
+1. **Header** - Shepherd.png logo and collapse toggle
+2. **Quick Actions** - New conversation, history, save/export
+3. **Workflow Controls** - Mode selection and agent settings
+4. **Active Agents Monitor** - Real-time agent status
+5. **Resource Usage** - Memory, tokens, API calls
+6. **Footer** - Settings, analytics, help, connection status
+
 **Actions**:
-- Create new chat conversations
-- Switch between existing conversations
-- Search through conversation history
-- Access settings and help
-- Select project folder for context
-- View system status (Ollama connection)
-- Collapse/expand sidebar for more workspace
+- Toggle collapse/expand state (280px ↔ 48px, showing full logo/text or logo only)
+- Create new conversation
+- Access conversation history
+- Export current workflow
+- Select workflow mode (Auto/Sequential/Parallel/Conditional/Hierarchical)
+- Adjust agent settings (max agents, timeout)
+- Toggle features (collaboration, vector memory)
+- Monitor active agent status
+- View resource consumption
+- Access settings and analytics
+- Check connection status
 
-### ConversationArea (`/components/layout/conversation-area.tsx`)
-**Purpose**: Main chat interface for user-AI interaction
+### ConversationArea (`/components/layout/conversation/ConversationArea.tsx`)
+**Purpose**: Primary workspace for user-AI interaction
+**Sections**:
+1. **Top Bar** - Workflow status and controls
+2. **Message List** - Conversation history
+3. **Input Area** - Message composition
+
 **Actions**:
-- Display message history with sender identification
-- Show real-time typing indicators
-- Support markdown rendering in messages
-- Display inline progress indicators for long tasks
-- Auto-scroll to latest messages
-- Support message copying and selection
+- Display current workflow type and status
+- Show/hide stop button during execution
+- Render user and AI messages with timestamps
+- Display execution steps with progress indicators
+- Show generated artifacts as clickable buttons
+- Auto-scroll to new messages
+- Support message selection and copying
+- Expand/collapse execution details
+- Handle multi-line input with auto-resize
+- Attach files to messages
+- Use quick templates
+- Execute/stop workflow
 
-### ArtifactsPanel (`/components/layout/artifacts-panel.tsx`)
-**Purpose**: Display and manage generated code, reports, and outputs
+## Sidebar Components
+
+### QuickActions (`/components/layout/sidebar/QuickActions.tsx`)
+**Purpose**: Fast access to common operations
 **Actions**:
-- View generated artifacts with syntax highlighting
-- Switch between multiple artifacts via tabs
-- Copy artifact content to clipboard
-- Download/export artifacts
-- Execute code artifacts (when applicable)
-- Dismiss/close individual artifacts
-- Resize panel for optimal viewing
+- Start new conversation (clear current)
+- Open conversation history modal
+- Export conversation/workflow
 
-## Feature Components
+### WorkflowControls (`/components/layout/sidebar/WorkflowControls.tsx`)
+**Purpose**: Configure workflow execution parameters
+**Controls**:
+- **Mode Dropdown**: Select workflow pattern
+- **Agent Slider**: Set max agents (1-10)
+- **Timeout Input**: Set execution timeout
+- **Feature Checkboxes**: Enable/disable features
 
-### ProjectFolderSelector (`/components/features/settings/project-folder-selector.tsx`)
-**Purpose**: Select and display current working directory for file operations
 **Actions**:
-- Open native folder selection dialog
-- Display selected folder path
-- Clear/reset folder selection
-- Persist selection across sessions
-- Show truncated path for long directories
+- Change workflow mode
+- Adjust agent count dynamically
+- Set custom timeout values
+- Toggle collaboration features
+- Enable/disable vector memory
+- Show/hide advanced options
 
-### MessageInput (`/components/features/chat/message-input.tsx`)
-**Purpose**: Input interface for user messages and commands
+### AgentMonitor (`/components/layout/sidebar/AgentMonitor.tsx`)
+**Purpose**: Real-time agent status visualization
+**Display Elements**:
+- Agent type icon and name
+- Status indicator (🟢🟡🔴⚫)
+- Current activity description
+- View details link
+
 **Actions**:
-- Multi-line text input with auto-resize
-- Send messages via Enter or button click
-- Command autocomplete and suggestions
-- Emoji picker integration
-- File attachment support
-- Voice input recognition
+- Auto-update agent status via WebSocket
+- Filter agents by status
+- Expand for detailed view
+- Show agent performance metrics
 
-## Phase 9: Frontend Collaboration UI Components
+### ResourceUsage (`/components/layout/sidebar/ResourceUsage.tsx`)
+**Purpose**: Monitor system resource consumption
+**Metrics**:
+- Memory usage (progress bar + percentage)
+- Token usage (current/maximum)
+- API call count
+- Execution timer
 
-### Agent Status Components (`/components/features/agents/agent-status.tsx`)
-**Purpose**: Real-time visualization of agent states and performance metrics
-**Components**:
-- `AgentStatusCard`: Individual agent status display with progress indicators
-- `AgentStatusPanel`: Grid view of all active agents with filtering
-- `AgentDetailView`: Expanded view showing detailed agent information
 **Actions**:
-- Display agent status (idle, working, error, completed)
-- Show current task progress with visual indicators
-- Filter agents by status, type, or performance metrics
-- View detailed agent performance statistics
-- Show agent resource usage (CPU, memory)
-- Display agent connections and communication patterns
-- View agent tool usage and capabilities
+- Real-time metric updates
+- Color-coded warnings (green/yellow/red)
+- Hover for detailed breakdowns
+- Reset counters on new conversation
 
-### Agent Collaboration Components (`/components/features/agents/agent-collaboration.tsx`)
-**Purpose**: Visualization of agent-to-agent interactions and teamwork
+## Conversation Components
+
+### MessageList (`/components/layout/conversation/MessageList.tsx`)
+**Purpose**: Display conversation history
+**Message Types**:
+- User messages
+- AI responses
+- System notifications
+- Error messages
+
 **Actions**:
-- Display agent communication network topology
-- Show message flow between agents in real-time
-- Visualize collaborative task distribution
-- Monitor peer review processes and consensus building
-- Track shared context and knowledge exchange
+- Render messages with sender identification
+- Display timestamps (relative/absolute)
+- Show execution steps in collapsible panels
+- Highlight artifacts as clickable buttons
+- Support markdown rendering
+- Enable text selection and copying
+- Virtual scrolling for long conversations
 
-### Communication Flow Components (`/components/features/agents/communication-flow.tsx`)
-**Purpose**: Real-time visualization of agent communication events
-**Components**:
-- `CommunicationEventItem`: Individual message/event display
-- `CommunicationNetwork`: Network topology of agent connections
-- `CommunicationStatsPanel`: Communication statistics overview
+### Message (`/components/layout/conversation/Message.tsx`)
+**Purpose**: Individual message rendering
+**Elements**:
+- Sender avatar/icon
+- Message content
+- Timestamp
+- Action buttons
+- Execution details (AI messages)
+
 **Actions**:
-- Stream real-time communication events via WebSocket
-- Filter events by type (request, response, broadcast, peer_review)
-- Show message priorities and response times
-- Display conversation threads and context IDs
-- Pause/resume event streaming
-- View connection strength and activity metrics
+- Copy message content
+- Expand/collapse details
+- Click artifacts to open modal
+- Show status indicators
+- Display progress animations
 
-### Memory Flow Components (`/components/features/memory/memory-flow.tsx`)
-**Purpose**: Visualization of memory operations across the three-tier architecture
-**Components**:
-- `MemoryFlowVisualizer`: Main memory transfer visualization
-- `MemoryTransferItem`: Individual memory operation display
-- `MemoryUsagePanel`: Per-agent memory usage statistics
+### InputArea (`/components/layout/conversation/InputArea.tsx`)
+**Purpose**: Message composition and submission
+**Controls**:
+- Multi-line text area
+- Attach file button
+- Templates dropdown
+- Execute/Stop button
+
 **Actions**:
-- Show memory transfers between agents and storage tiers
-- Display memory usage across local, shared, persistent, and vector tiers
-- Filter transfers by type (discovery, context, learning, knowledge, pattern)
-- Monitor agent subscription patterns to shared contexts
-- View memory operation statistics and trends
-- Pause/resume memory flow monitoring
+- Auto-expand text area (3-10 lines)
+- Handle file attachments
+- Show template menu
+- Submit with Ctrl+Enter
+- Toggle execute/stop based on state
+- Show character/token count
+- Display input validation
 
-### Learning Progress Components (`/components/features/learning/learning-progress.tsx`)
-**Purpose**: Visualization of Phase 8 learning system progress and insights
-**Components**:
-- `LearningProgressOverview`: Main dashboard for learning metrics
-- `LearningInsightCard`: Individual learning insight display
-- `FeedbackSummaryPanel`: User feedback statistics and trends
-- `PatternLearningPanel`: Pattern discovery and optimization metrics
-- `AdaptationStatsPanel`: Adaptive behavior statistics
+## Modal Components
+
+### ArtifactModal (`/components/layout/modals/ArtifactModal.tsx`)
+**Purpose**: Display and interact with generated artifacts
+**Features**:
+- Title bar with file info
+- Content viewer with syntax highlighting
+- Action buttons
+
 **Actions**:
-- Display learning insights with confidence scores and recommendations
-- Show feedback processing statistics and trends
-- Visualize pattern learning progress and success rates
-- Monitor adaptive behavior performance tracking
-- Filter insights by type (feedback, pattern, adaptation, performance)
-- Show learning score calculations and trend analysis
-
-### Performance Metrics Components (`/components/features/performance/metrics-dashboard.tsx`)
-**Purpose**: Comprehensive system performance monitoring dashboard
-**Components**:
-- `SystemMetricsPanel`: System resource utilization (CPU, memory, disk, network)
-- `WorkflowMetricsPanel`: Workflow execution statistics and performance
-- `AgentMetricsPanel`: Agent performance and efficiency metrics
-- `PerformanceAlertsPanel`: System alerts and performance warnings
-- `MetricsTrendsPanel`: Performance trends and change indicators
-**Actions**:
-- Monitor real-time system resource usage with visual indicators
-- Track workflow execution success rates and timing
-- Display agent efficiency and task completion metrics
-- Show performance alerts with acknowledgment system
-- Visualize performance trends with improvement/decline indicators
-- Display error rates and common failure patterns
-
-## Phase 10: Advanced Analytics Components
-
-### Analytics Dashboard Components (`/components/features/analytics/analytics-dashboard.tsx`)
-**Purpose**: Advanced analytics visualization and management interface
-**Components**:
-- `AnalyticsDashboard`: Main analytics dashboard container with customizable widgets
-- `WidgetContainer`: Individual widget wrapper with resize and configuration controls
-- `DashboardGrid`: Responsive grid layout system for widget arrangement
-- `DashboardToolbar`: Dashboard management toolbar with save, share, and export options
-**Actions**:
-- Create and manage custom analytics dashboards
-- Drag and drop widget positioning with grid snapping
-- Configure widget data sources and refresh intervals
-- Save dashboard configurations with persistence
-- Share dashboards with team members
-- Export dashboard layouts as templates
-
-### Collaboration Analytics Components (`/components/features/analytics/collaboration-analytics.tsx`)
-**Purpose**: Agent collaboration pattern analysis and visualization
-**Components**:
-- `CollaborationNetworkGraph`: Interactive network topology visualization of agent interactions
-- `CollaborationMetricsPanel`: Key collaboration metrics and KPIs display
-- `InteractionTimelineView`: Chronological view of agent interactions and communications
-- `TeamEfficiencyPanel`: Team performance analysis with collaboration effectiveness scores
-**Actions**:
-- Visualize agent communication networks with interactive graph controls
-- Display collaboration metrics including communication frequency and effectiveness
-- Show interaction patterns over time with timeline scrubbing
-- Analyze team performance with filtering by agent type and time period
-- Export collaboration reports in multiple formats
-- Configure collaboration metric thresholds and alerts
-
-### Predictive Analytics Components (`/components/features/analytics/predictive-analytics.tsx`)
-**Purpose**: Machine learning predictions and insights visualization
-**Components**:
-- `PredictionPanel`: Main predictions display with confidence indicators
-- `WorkflowSuccessPrediction`: Workflow success probability visualization
-- `PerformanceForecast`: Performance predictions with trend analysis
-- `ResourceUsagePrediction`: Resource requirement predictions with capacity planning
-- `RecommendationEngine`: AI-driven recommendations display
-**Actions**:
-- Display workflow success predictions with confidence scores
-- Show performance forecasts with interactive trend lines
-- Visualize resource usage predictions for capacity planning
-- Present AI recommendations with reasoning explanations
-- Configure prediction parameters and model selection
-- Track prediction accuracy over time with validation metrics
-
-### Metrics Aggregator Components (`/components/features/analytics/metrics-aggregator.tsx`)
-**Purpose**: Real-time metrics collection and trend analysis interface
-**Components**:
-- `MetricsOverviewPanel`: High-level metrics summary with key performance indicators
-- `TrendAnalysisChart`: Interactive trend visualization with multiple metrics
-- `AnomalyDetectionPanel`: Anomaly alerts and pattern deviation indicators
-- `HistoricalDataExplorer`: Time-series data exploration with drill-down capabilities
-**Actions**:
-- Monitor real-time system metrics with live updating displays
-- Analyze performance trends with interactive time range selection
-- Display anomaly alerts with automatic pattern deviation detection
-- Explore historical data with zoom and filter capabilities
-- Configure metric collection intervals and retention policies
-- Set up automated alerts for metric threshold breaches
-
-### Export Manager Components (`/components/features/analytics/export-manager.tsx`)
-**Purpose**: Multi-format data export and report generation interface
-**Components**:
-- `ExportWizard`: Step-by-step export configuration interface
-- `ReportTemplateSelector`: Pre-built report template selection with preview
-- `ExportFormatSelector`: Multi-format export options (PDF, CSV, JSON, Excel, HTML, Markdown)
-- `ScheduledExportsPanel`: Automated export scheduling and management
-- `ExportHistoryView`: Export job history with status tracking and download links
-**Actions**:
-- Configure data exports with flexible filtering and date range selection
-- Select from professional report templates with customization options
-- Choose export formats based on intended use (analysis, sharing, archival)
-- Schedule automated exports with configurable frequency and distribution
-- Track export job status with progress indicators and error handling
-- Download completed exports with organized file management
-
-### Analytics Widget Library (`/components/features/analytics/widgets/`)
-**Purpose**: Reusable analytics visualization widgets
-**Widget Types**:
-1. **LineChart Widget** (`line-chart-widget.tsx`): Time-series trend visualization
-2. **BarChart Widget** (`bar-chart-widget.tsx`): Comparative metrics display
-3. **PieChart Widget** (`pie-chart-widget.tsx`): Distribution analysis visualization
-4. **GaugeChart Widget** (`gauge-chart-widget.tsx`): Performance level indicators
-5. **TableWidget** (`table-widget.tsx`): Tabular data with sorting and filtering
-6. **NetworkGraph Widget** (`network-graph-widget.tsx`): Relationship visualization
-7. **Heatmap Widget** (`heatmap-widget.tsx`): Activity pattern visualization
-8. **ProgressBar Widget** (`progress-bar-widget.tsx`): Goal tracking and completion
-9. **StatusIndicator Widget** (`status-indicator-widget.tsx`): System health displays
-
-**Widget Features**:
-- **Real-time Data Streaming**: WebSocket integration for live updates
-- **Interactive Controls**: Zoom, filter, and drill-down capabilities
-- **Customizable Styling**: Theme-aware styling with customization options
-- **Responsive Design**: Adaptive layouts for different screen sizes
-- **Export Capabilities**: Individual widget export to images and data formats
-- **Configuration Panels**: User-friendly widget configuration interfaces
-
-### Analytics API Integration (`/lib/analytics-api.ts`)
-**Purpose**: TypeScript client for Phase 10 analytics system backend
-**Functionality**:
-- Connect to analytics REST endpoints with full type safety
-- Stream real-time analytics data via WebSocket connections
-- Manage dashboard configurations with CRUD operations
-- Generate and track export jobs with status monitoring
-- Access predictive analytics with parameter configuration
-- Retrieve metrics data with flexible querying capabilities
-**Methods**:
-- `getAnalyticsData()`: Retrieve system metrics and performance data
-- `createDashboard()`: Create new custom analytics dashboards
-- `updateWidget()`: Update widget configurations and data sources
-- `generateExport()`: Initiate data exports with format and filter selection
-- `getPredictions()`: Access ML predictions with confidence intervals
-- `streamMetrics()`: Establish WebSocket connections for real-time data
-- `getCollaborationMetrics()`: Retrieve agent collaboration analysis data
-
-## API Integration Components
-
-### Learning API Integration (`/lib/learning-api.ts`)
-**Purpose**: TypeScript client for Phase 8 learning system backend
-**Functionality**:
-- Submit user feedback for processing (6 feedback types supported)
-- Retrieve learning insights and statistics
-- Get pattern recommendations based on context
-- Apply and track adaptive behavior modifications
-- Configure learning settings per agent
-- Monitor system-wide learning statistics
-**Methods**:
-- `submitFeedback()`: Process user corrections, preferences, and guidance
-- `getLearningInsights()`: Retrieve learning progress and metrics
-- `getPatternRecommendations()`: Get workflow optimization suggestions
-- `getAdaptations()`: Retrieve context-specific behavioral adaptations
-- `recordAdaptationOutcome()`: Track adaptation success/failure rates
-**Purpose**: Multi-line input area for user messages
-**Actions**:
-- Type and edit messages with markdown support
-- Send messages via Enter or button click
-- Use Ctrl+Enter for multi-line messages
-- Show character count or limits
-- Support file drag-and-drop
-- Clear input after sending
-
-### MessageList (`/components/features/chat/message-list.tsx`)
-**Purpose**: Display conversation history in terminal-style flow
-**Actions**:
-- Render user and AI messages with distinct styling
-- Show timestamps for each message
-- Support message actions (copy, retry, edit)
-- Display system messages and notifications
-- Implement virtual scrolling for performance
-
-### ArtifactViewer (`/components/features/artifacts/artifact-viewer.tsx`)
-**Purpose**: Display individual artifacts with appropriate formatting
-**Actions**:
-- Syntax highlighting for 50+ languages
-- Line numbers and code folding
-- Search within artifact content
-- Toggle word wrap
-- Full-screen mode
-- Print artifact content
-
-### WorkflowProgress (`/components/features/workflow/workflow-progress.tsx`)
-**Purpose**: Show real-time progress of multi-step workflows
-**Actions**:
-- Display workflow steps and current status
-- Show elapsed time and estimates
-- Indicate success/failure per step
-- Allow workflow cancellation
-- Expand/collapse detailed logs
-
-### ThemeSelector (`/components/features/settings/theme-selector.tsx`)
-**Purpose**: Switch between available color themes
-**Actions**:
-- Preview themes before applying
-- Persist theme preference
-- Support system theme detection
-- Apply theme without page reload
-
-### ConversationCompactor (`/components/features/conversation/conversation-compactor.tsx`)
-**Purpose**: Monitor token usage and manage conversation compacting
-**Actions**:
-- Display real-time token usage with progress bar
-- Show warning indicators at 80% and 90% thresholds
-- Open compacting strategy selection dialog
-- Execute conversation compacting with chosen strategy
-- Display compacting results with before/after statistics
-- Provide WebSocket notifications for auto-compacting suggestions
-- Support five compacting strategies: Auto, Milestone, Selective, Aggressive, Conservative
-
-## UI Components (Base)
-
-### Button (`/components/ui/button.tsx`)
-**Purpose**: Reusable button component with multiple variants
-**Variants**:
-- Primary (shepherd-blue actions)
-- Secondary (outline style)
-- Ghost (minimal style)
-- Danger (destructive actions)
-**Actions**:
-- Click handling with loading states
-- Keyboard navigation support
-- Disabled state handling
-
-### Input (`/components/ui/input.tsx`)
-**Purpose**: Text input field with consistent styling
-**Actions**:
-- Text entry with validation
-- Placeholder and label support
-- Error state display
-- Clear button option
-- Password visibility toggle
-
-### Textarea (`/components/ui/textarea.tsx`)
-**Purpose**: Multi-line text input for longer content
-**Actions**:
-- Auto-resize based on content
-- Character/line counting
-- Markdown preview toggle
-- Syntax highlighting hints
-
-### Select (`/components/ui/select.tsx`)
-**Purpose**: Dropdown selection component
-**Actions**:
-- Single/multi selection modes
-- Search/filter options
-- Keyboard navigation
-- Custom option rendering
-
-### Dialog (`/components/ui/dialog.tsx`)
-**Purpose**: Modal dialog for confirmations and forms
-**Actions**:
-- Open/close with animations
-- Backdrop click handling
-- ESC key dismissal
-- Focus trap management
-- Nested dialog support
-
-### Tabs (`/components/ui/tabs.tsx`)
-**Purpose**: Tab navigation for grouped content
-**Actions**:
-- Switch between tab panels
-- Keyboard navigation (arrow keys)
-- Dynamic tab addition/removal
-- Tab overflow handling
-- Persist active tab state
-
-### Tooltip (`/components/ui/tooltip.tsx`)
-**Purpose**: Contextual information on hover
-**Actions**:
-- Show on hover/focus
-- Position automatically
-- Delay configuration
-- Mobile touch support
-
-### Badge (`/components/ui/badge.tsx`)
-**Purpose**: Status indicators and labels
-**Variants**:
-- Status (online/offline/busy)
-- Count (numeric indicators)
-- Category (topic labels)
-**Actions**:
-- Click for filtering
-- Dismiss/remove capability
-
-### ScrollArea (`/components/ui/scroll-area.tsx`)
-**Purpose**: Custom scrollbar styling and behavior
-**Actions**:
-- Smooth scrolling
-- Custom scrollbar appearance
-- Scroll position persistence
-- Programmatic scroll control
-
-### Separator (`/components/ui/separator.tsx`)
-**Purpose**: Visual divider between sections
-**Variants**:
-- Horizontal/vertical orientation
-- Solid/dashed styles
-- With/without spacing
-
-## Composite Components
-
-### ConversationList (`/components/features/conversations/conversation-list.tsx`)
-**Purpose**: Display list of all conversations in sidebar
-**Actions**:
-- Filter by date/status
-- Sort by recent/name
-- Delete conversations
-- Export conversation history
-- Pin important conversations
-
-### SettingsPanel (`/components/features/settings/settings-panel.tsx`)
-**Purpose**: Application configuration interface
-**Actions**:
-- Modify API endpoints
-- Configure LLM models
-- Set keyboard shortcuts
-- Manage data privacy
-- Import/export settings
-
-### StatusIndicator (`/components/features/status/status-indicator.tsx`)
-**Purpose**: Show connection status to backend services
-**Actions**:
-- Display connection state
-- Show latency metrics
-- Retry failed connections
-- View detailed diagnostics
-
-### CommandPalette (`/components/features/command/command-palette.tsx`)
-**Purpose**: Quick action launcher (Ctrl+K)
-**Actions**:
-- Search all available actions
-- Execute commands
-- Navigate to conversations
-- Access recent artifacts
-- Keyboard-only operation
-
-### ResizeHandle (`/components/ui/resize-handle.tsx`)
-**Purpose**: Allow panel resizing via drag
-**Actions**:
-- Drag to resize panels
-- Double-click to reset
-- Snap to preset sizes
-- Persist size preferences
-
-## Specialized Components
-
-### CodeEditor (`/components/features/editor/code-editor.tsx`)
-**Purpose**: Embedded code editing with highlighting
-**Actions**:
-- Syntax highlighting
-- Auto-completion hints
-- Format on save
-- Multiple cursor support
-- Find/replace functionality
-
-### MarkdownRenderer (`/components/features/markdown/markdown-renderer.tsx`)
-**Purpose**: Render markdown content with extensions
-**Actions**:
-- Render standard markdown
-- Support code blocks
-- Handle tables and lists
-- Copy code blocks
-- Render mermaid diagrams
-
-### FileUploader (`/components/features/files/file-uploader.tsx`)
-**Purpose**: Handle file uploads and processing
-**Actions**:
-- Drag and drop files
-- Browse file selection
-- Show upload progress
-- Validate file types
-- Cancel uploads
-
-### ErrorBoundary (`/components/features/error/error-boundary.tsx`)
-**Purpose**: Gracefully handle component errors
-**Actions**:
-- Catch rendering errors
-- Display fallback UI
-- Log error details
-- Offer recovery actions
-
-## Animation Components
-
-### LoadingSpinner (`/components/ui/loading-spinner.tsx`)
-**Purpose**: Indicate loading states
-**Variants**:
-- Small (inline)
-- Medium (content)
-- Large (page)
-**Actions**:
-- Animate continuously
-- Show/hide based on state
-
-### ProgressBar (`/components/ui/progress-bar.tsx`)
-**Purpose**: Show determinate progress
-**Actions**:
-- Update progress value
-- Show percentage text
-- Animate transitions
-- Support multiple segments
-
-### SkeletonLoader (`/components/ui/skeleton-loader.tsx`)
-**Purpose**: Placeholder during content loading
-**Actions**:
-- Match content layout
-- Animate shimmer effect
-- Progressive content reveal
+- View artifact content
+- Copy to clipboard
+- Download file
+- Execute scripts (with confirmation)
+- Edit inline
+- Save as new file
+- Close modal (Esc or X)
+- Maximize/minimize view
 
 ## Utility Components
 
-### Portal (`/components/ui/portal.tsx`)
-**Purpose**: Render content outside component hierarchy
+### StatusIndicator (`/components/ui/StatusIndicator.tsx`)
+**Purpose**: Visual status representation
+**States**:
+- Ready (green)
+- Running (pulsing blue)
+- Complete (green check)
+- Error (red X)
+- Warning (yellow triangle)
+
+### ProgressBar (`/components/ui/ProgressBar.tsx`)
+**Purpose**: Visual progress indication
+**Variants**:
+- Determinate (with percentage)
+- Indeterminate (animated)
+- Segmented (multi-step)
+
+### Tooltip (`/components/ui/Tooltip.tsx`)
+**Purpose**: Contextual help and information
+**Features**:
+- Auto-positioning
+- Delay before showing
+- Keyboard accessible
+
+## State Management Components
+
+### WorkflowStore (`/stores/workflowStore.ts`)
+**Purpose**: Global workflow state management
+**State**:
+- Current workflow mode
+- Agent settings
+- Execution status
+- Resource metrics
+
+### ConversationStore (`/stores/conversationStore.ts`)
+**Purpose**: Conversation data management
+**State**:
+- Message history
+- Current conversation ID
+- Artifacts list
+- Input draft
+
+### UIStore (`/stores/uiStore.ts`)
+**Purpose**: UI preferences and state
+**State**:
+- Sidebar collapsed state
+- Theme selection
+- Font size
+- Animation preferences
+
+## Real-time Components
+
+### WebSocketProvider (`/components/providers/WebSocketProvider.tsx`)
+**Purpose**: WebSocket connection management
+**Features**:
+- Auto-reconnection
+- Message queuing
+- Connection status
+- Event subscription
+
+### LiveUpdates (`/components/features/LiveUpdates.tsx`)
+**Purpose**: Real-time data synchronization
+**Updates**:
+- Agent status changes
+- Execution progress
+- Resource metrics
+- New messages
+
+## Accessibility Components
+
+### SkipLinks (`/components/a11y/SkipLinks.tsx`)
+**Purpose**: Keyboard navigation shortcuts
+**Links**:
+- Skip to main content
+- Skip to sidebar
+- Skip to input
+
+### ScreenReaderAnnouncer (`/components/a11y/ScreenReaderAnnouncer.tsx`)
+**Purpose**: Dynamic content announcements
+**Announcements**:
+- Status changes
+- New messages
+- Error notifications
+- Progress updates
+
+## Theme Components
+
+### ThemeProvider (`/components/providers/ThemeProvider.tsx`)
+**Purpose**: Theme management and application
+**Themes**:
+- Light theme
+- Dark theme
+- Blue (Professional) theme
+- High contrast mode
+
+### ThemeToggle (`/components/ui/ThemeToggle.tsx`)
+**Purpose**: Theme selection interface
 **Actions**:
-- Mount to document body
-- Maintain React context
-- Handle cleanup
+- Switch between themes
+- Preview themes
+- Save preference
+- Apply system theme
 
-### FocusTrap (`/components/ui/focus-trap.tsx`)
-**Purpose**: Keep keyboard focus within bounds
+## Analytics Components (Backend-Required)
+
+### AnalyticsDashboard (`/components/features/analytics/AnalyticsDashboard.tsx`)
+**Purpose**: Main analytics visualization interface
+**Features**:
+- Dashboard template selection
+- Widget grid layout
+- Real-time metric updates via WebSocket
+- Export functionality
+
 **Actions**:
-- Trap tab navigation
-- Return focus on unmount
-- Handle escape key
+- Create/clone dashboards
+- Add/remove widgets
+- Configure widget settings
+- Export dashboard data
+- Subscribe to real-time updates
 
-### VisuallyHidden (`/components/ui/visually-hidden.tsx`)
-**Purpose**: Hide content visually but keep for screen readers
+### CollaborationAnalysis (`/components/features/analytics/CollaborationAnalysis.tsx`)
+**Purpose**: Visualize agent collaboration patterns
+**Displays**:
+- Agent interaction network graph
+- Collaboration efficiency metrics
+- Communication patterns
+- Bottleneck identification
+
+### PredictiveInsights (`/components/features/analytics/PredictiveInsights.tsx`)
+**Purpose**: Display AI-powered predictions and recommendations
+**Features**:
+- Workflow success predictions
+- Resource usage forecasts
+- Optimization recommendations
+- Risk assessments
+
+### MetricsViewer (`/components/features/analytics/MetricsViewer.tsx`)
+**Purpose**: Real-time metrics visualization
+**Metrics**:
+- System performance
+- Agent performance
+- Workflow metrics
+- Resource utilization
+- Error rates
+
 **Actions**:
-- Provide accessible labels
-- Announce dynamic changes
+- Stream metrics via WebSocket
+- Filter by time range
+- Aggregate metrics
+- Export metric data
 
-## State Management
+### ExportManager (`/components/features/analytics/ExportManager.tsx`)
+**Purpose**: Handle data exports in multiple formats
+**Formats**:
+- PDF reports
+- CSV data
+- JSON exports
+- Excel workbooks
+- HTML reports
+- Markdown documentation
 
-### Stores (using Zustand)
-- **useConversationStore**: Manage chat conversations and token usage monitoring
-- **useArtifactStore**: Handle artifacts lifecycle
-- **useSettingsStore**: Application preferences
-- **useProjectStore**: Project folder and context
-- **useThemeStore**: Theme selection and application
-- **useWorkflowStore**: Workflow execution state
+**Actions**:
+- Configure export settings
+- Track export progress
+- Download completed exports
+- Schedule recurring exports
 
-## Expected User Interactions
+## Conversation Management Components
 
-1. **New User Flow**:
-   - Open application → See welcome message
-   - Click "New Chat" → Start conversation
-   - Type message → Press Enter to send
-   - View AI response → See artifacts generated
-   - Click artifact → View in artifacts panel
+### ConversationCompactor (`/components/features/conversation/ConversationCompactor.tsx`)
+**Purpose**: Manage conversation memory and token usage
+**Features**:
+- Token usage display
+- Compaction strategy selection
+- Auto-compact threshold settings
+- Context preservation options
 
-2. **Power User Flow**:
-   - Ctrl+N → New chat
-   - Ctrl+K → Command palette
-   - Type command → Execute
-   - Ctrl+1/2/3 → Switch panels
-   - Drag borders → Resize panels
+**Actions**:
+- Trigger manual compaction
+- Monitor token usage in real-time
+- Configure auto-compact rules
+- Preview compaction results
 
-3. **File Operations**:
-   - Click folder selector → Choose project
-   - Drag files → Upload to conversation
-   - Click artifact → Copy or download
-   - Use keyboard shortcuts → Navigate efficiently
+### ConversationHistory (`/components/features/conversation/ConversationHistory.tsx`)
+**Purpose**: Browse and manage past conversations
+**Features**:
+- Conversation list with search
+- Filter by date/status
+- Conversation preview
+- Bulk operations
 
-4. **Workflow Execution**:
-   - Submit complex request → See workflow steps
-   - Monitor progress → View real-time updates
-   - Click step → See detailed logs
-   - Cancel if needed → Rollback safely
+**Actions**:
+- Load previous conversations
+- Search conversation content
+- Delete conversations
+- Export conversation history
 
-This component structure provides a professional, efficient, and accessible interface for the Shepherd intelligent workflow orchestrator.
+### TokenUsageIndicator (`/components/features/conversation/TokenUsageIndicator.tsx`)
+**Purpose**: Real-time token usage monitoring
+**Display**:
+- Current token count
+- Maximum token limit
+- Usage percentage
+- Cost estimation
+
+**Actions**:
+- Update via WebSocket
+- Show usage trends
+- Alert on high usage
+- Display breakdown by agent
+
+## Learning System Components
+
+### FeedbackPanel (`/components/features/learning/FeedbackPanel.tsx`)
+**Purpose**: Collect user feedback for system improvement
+**Types**:
+- Task success/failure
+- Quality ratings
+- Improvement suggestions
+- Error reports
+
+**Actions**:
+- Submit feedback
+- Rate workflow execution
+- Provide detailed comments
+- View feedback history
+
+### PatternInsights (`/components/features/learning/PatternInsights.tsx`)
+**Purpose**: Display learned patterns and optimizations
+**Shows**:
+- Discovered workflow patterns
+- Optimization suggestions
+- Performance improvements
+- Usage trends
+
+### AdaptiveBehavior (`/components/features/learning/AdaptiveBehavior.tsx`)
+**Purpose**: Configure and monitor adaptive system behavior
+**Settings**:
+- Learning rate
+- Adaptation thresholds
+- Behavior preferences
+- Performance goals
+
+## System Status Components
+
+### OllamaStatus (`/components/features/status/OllamaStatus.tsx`)
+**Purpose**: Monitor Ollama LLM connection status
+**Display**:
+- Connection state
+- Model information
+- Response time
+- Error messages
+
+**Actions**:
+- Reconnect to Ollama
+- Switch models
+- View model details
+- Configure connection settings
+
+### SystemHealth (`/components/features/status/SystemHealth.tsx`)
+**Purpose**: Overall system health monitoring
+**Monitors**:
+- API server status
+- WebSocket connections
+- Database status
+- External service availability
+
+### ErrorBoundary (`/components/features/error/ErrorBoundary.tsx`)
+**Purpose**: Graceful error handling and recovery
+**Features**:
+- Error catching
+- Fallback UI
+- Error reporting
+- Recovery actions
+
+**Actions**:
+- Display error details
+- Report errors to backend
+- Attempt recovery
+- Reset application state
+
+## Workflow Configuration Components
+
+### WorkflowTemplates (`/components/features/workflow/WorkflowTemplates.tsx`)
+**Purpose**: Pre-configured workflow templates
+**Categories**:
+- Data analysis
+- Code generation
+- System administration
+- Content creation
+
+**Actions**:
+- Browse templates
+- Preview template details
+- Apply template to input
+- Customize template parameters
+
+### WorkflowVisualizer (`/components/features/workflow/WorkflowVisualizer.tsx`)
+**Purpose**: Visual representation of workflow execution
+**Display**:
+- Workflow graph
+- Execution path
+- Agent assignments
+- Progress indicators
+
+**Actions**:
+- Zoom/pan workflow graph
+- Highlight active steps
+- Show step details on hover
+- Export workflow diagram
+
+---
+
+This comprehensive component structure ensures all backend API endpoints have corresponding frontend components, providing a complete and functional user interface for the Shepherd application.
