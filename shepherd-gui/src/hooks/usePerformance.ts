@@ -13,7 +13,7 @@ import {
  * Hook for tracking component render performance
  */
 export const useRenderPerformance = (componentName: string) => {
-  const startTimeRef = useRef<number>()
+  const startTimeRef = useRef<number>(0)
   const [renderTime, setRenderTime] = useState<number>(0)
   
   useEffect(() => {
