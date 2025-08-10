@@ -6,7 +6,9 @@
  */
 
 import { create } from 'zustand';
-import { devtools, persist } from 'zustand/middleware';
+import { devtools, persist, subscribeWithSelector } from 'zustand/middleware';
+import { immer } from 'zustand/middleware/immer';
+import { shallow } from 'zustand/shallow';
 
 interface Conversation {
   id: string;
@@ -80,7 +82,8 @@ interface ConversationState {
 export const useConversationStore = create<ConversationState>()(
   devtools(
     persist(
-      (set, get) => ({
+      immer(
+        subscribeWithSelector((set, get) => ({
         // Initial state
         currentConversation: null,
         conversations: [],
@@ -93,65 +96,87 @@ export const useConversationStore = create<ConversationState>()(
 
         // Basic state actions
         setCurrentConversation: (conversation) =>
-          set({ currentConversation: conversation }, false, 'setCurrentConversation'),
+          set((state) => {
+            state.currentConversation = conversation;
+          }),
 
         updateConversation: (conversation) =>
-          set((state) => ({
-            conversations: state.conversations.map(c => 
-              c.id === conversation.id ? conversation : c
-            ),
-            currentConversation: state.currentConversation?.id === conversation.id 
-              ? conversation 
-              : state.currentConversation
-          }), false, 'updateConversation'),
+          set((state) => {
+            const index = state.conversations.findIndex(c => c.id === conversation.id);
+            if (index !== -1) {
+              state.conversations[index] = conversation;
+            }
+            if (state.currentConversation?.id === conversation.id) {
+              state.currentConversation = conversation;
+            }
+          }),
 
         addConversation: (conversation) =>
-          set((state) => ({
-            conversations: [conversation, ...state.conversations]
-          }), false, 'addConversation'),
+          set((state) => {
+            state.conversations.unshift(conversation);
+          }),
 
         removeConversation: (conversationId) =>
-          set((state) => ({
-            conversations: state.conversations.filter(c => c.id !== conversationId),
-            currentConversation: state.currentConversation?.id === conversationId 
-              ? null 
-              : state.currentConversation
-          }), false, 'removeConversation'),
+          set((state) => {
+            state.conversations = state.conversations.filter(c => c.id !== conversationId);
+            if (state.currentConversation?.id === conversationId) {
+              state.currentConversation = null;
+            }
+          }),
 
         setConversations: (conversations) =>
-          set({ conversations }, false, 'setConversations'),
+          set((state) => {
+            state.conversations = conversations;
+          }),
 
         // Token usage actions
         setTokenUsage: (usage) =>
-          set({ tokenUsage: usage, lastUpdate: new Date().toISOString() }, false, 'setTokenUsage'),
+          set((state) => {
+            state.tokenUsage = usage;
+            state.lastUpdate = new Date().toISOString();
+          }),
 
         updateTokenUsage: (updates) =>
-          set((state) => ({
-            tokenUsage: state.tokenUsage ? { ...state.tokenUsage, ...updates } : null,
-            lastUpdate: new Date().toISOString()
-          }), false, 'updateTokenUsage'),
+          set((state) => {
+            if (state.tokenUsage) {
+              Object.assign(state.tokenUsage, updates);
+            }
+            state.lastUpdate = new Date().toISOString();
+          }),
 
         // Compacting actions
         addCompactingResult: (result) =>
-          set((state) => ({
-            compactingHistory: [result, ...state.compactingHistory.slice(0, 19)] // Keep last 20
-          }), false, 'addCompactingResult'),
+          set((state) => {
+            state.compactingHistory.unshift(result);
+            // Keep only last 20 results
+            state.compactingHistory = state.compactingHistory.slice(0, 20);
+          }),
 
         setCompactingHistory: (history) =>
-          set({ compactingHistory: history }, false, 'setCompactingHistory'),
+          set((state) => {
+            state.compactingHistory = history;
+          }),
 
         // Status actions
         setLoading: (loading) =>
-          set({ isLoading: loading }, false, 'setLoading'),
+          set((state) => {
+            state.isLoading = loading;
+          }),
 
         setError: (error) =>
-          set({ error }, false, 'setError'),
+          set((state) => {
+            state.error = error;
+          }),
 
         setConnected: (connected) =>
-          set({ isConnected: connected }, false, 'setConnected'),
+          set((state) => {
+            state.isConnected = connected;
+          }),
 
         setLastUpdate: (timestamp) =>
-          set({ lastUpdate: timestamp }, false, 'setLastUpdate'),
+          set((state) => {
+            state.lastUpdate = timestamp;
+          }),
 
         // API actions
         fetchConversations: async () => {
@@ -242,8 +267,8 @@ export const useConversationStore = create<ConversationState>()(
             console.error('Compacting failed:', error);
             return false;
           }
-        }
-      }),
+        }))
+      ),
       {
         name: 'conversation-store',
         partialize: (state) => ({
@@ -257,3 +282,43 @@ export const useConversationStore = create<ConversationState>()(
     { name: 'conversation-store' }
   )
 );
+
+// Performance-optimized selectors
+export const conversationSelectors = {
+  // Current conversation
+  current: (state: ConversationState) => ({
+    currentConversation: state.currentConversation,
+    tokenUsage: state.tokenUsage,
+  }),
+  
+  // Conversations list
+  conversations: (state: ConversationState) => ({
+    conversations: state.conversations,
+    totalCount: state.conversations.length,
+    activeCount: state.conversations.filter(c => c.active).length,
+  }),
+  
+  // Status
+  status: (state: ConversationState) => ({
+    isLoading: state.isLoading,
+    isConnected: state.isConnected,
+    error: state.error,
+    lastUpdate: state.lastUpdate,
+  }),
+  
+  // Compacting
+  compacting: (state: ConversationState) => ({
+    compactingHistory: state.compactingHistory,
+    recentCompacting: state.compactingHistory.slice(0, 5),
+    totalCompactions: state.compactingHistory.length,
+    successRate: state.compactingHistory.length > 0 
+      ? state.compactingHistory.filter(h => h.success).length / state.compactingHistory.length 
+      : 0,
+  }),
+};
+
+// Typed hooks for better DX
+export const useCurrentConversation = () => useConversationStore(conversationSelectors.current, shallow);
+export const useConversations = () => useConversationStore(conversationSelectors.conversations, shallow);
+export const useConversationStatus = () => useConversationStore(conversationSelectors.status, shallow);
+export const useCompactingHistory = () => useConversationStore(conversationSelectors.compacting, shallow);

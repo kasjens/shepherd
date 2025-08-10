@@ -18,8 +18,7 @@ export function ProjectFolderSelector() {
       if (isTauri()) {
         try {
           // Dynamic import with string literal to prevent webpack analysis
-          const dialogModule = await import(/* webpackIgnore: true */ '@tauri-apps/api/dialog')
-          const { open } = dialogModule
+          const { open } = await eval('import("@tauri-apps/api/dialog")')
           
           const selected = await open({
             directory: true,

@@ -81,6 +81,43 @@ global.WebSocket = class WebSocket {
   send() {}
 }
 
+// Mock Performance API
+global.performance = {
+  ...global.performance,
+  now: jest.fn(() => Date.now()),
+  getEntriesByType: jest.fn(() => []),
+  getEntriesByName: jest.fn(() => []),
+  memory: {
+    jsHeapSizeLimit: 2147483648,
+    totalJSHeapSize: 50000000,
+    usedJSHeapSize: 30000000
+  }
+}
+
+// Mock PerformanceObserver
+global.PerformanceObserver = jest.fn().mockImplementation(() => ({
+  observe: jest.fn(),
+  disconnect: jest.fn()
+}))
+
+// Mock Service Worker API
+Object.defineProperty(navigator, 'serviceWorker', {
+  value: {
+    register: jest.fn().mockResolvedValue({
+      scope: '/',
+      addEventListener: jest.fn(),
+      waiting: null
+    }),
+    addEventListener: jest.fn(),
+    ready: Promise.resolve({
+      scope: '/',
+      addEventListener: jest.fn(),
+      waiting: null
+    })
+  },
+  writable: true
+})
+
 // Suppress console errors during tests (optional)
 const originalError = console.error
 beforeAll(() => {

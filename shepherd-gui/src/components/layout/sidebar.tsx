@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState, useCallback, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -20,6 +20,7 @@ import {
   Brain
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useRenderPerformance, usePerformanceMode } from '@/hooks/usePerformance'
 import { ProjectFolderSelector } from '@/components/features/settings/project-folder-selector'
 import { AnalyticsModal } from '@/components/features/modals/analytics-modal'
 import { ArtifactsModal } from '@/components/features/modals/artifacts-modal'
@@ -32,27 +33,56 @@ interface SidebarProps {
   onCollapsedChange?: (collapsed: boolean) => void
 }
 
-export function Sidebar({ className, width = 320, isCollapsed = false, onCollapsedChange }: SidebarProps) {
+export const Sidebar = React.memo<SidebarProps>(function Sidebar({ 
+  className, 
+  width = 320, 
+  isCollapsed = false, 
+  onCollapsedChange 
+}) {
+  // Performance monitoring
+  const renderTime = useRenderPerformance('Sidebar')
+  const { shouldReduceAnimations } = usePerformanceMode()
+  
   const [analyticsOpen, setAnalyticsOpen] = useState(false)
   const [artifactsOpen, setArtifactsOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
 
-  const handleToggleCollapse = () => {
+  // Memoized callbacks to prevent unnecessary re-renders
+  const handleToggleCollapse = useCallback(() => {
     onCollapsedChange?.(!isCollapsed)
-  }
+  }, [isCollapsed, onCollapsedChange])
+  
+  const handleAnalyticsOpen = useCallback(() => setAnalyticsOpen(true), [])
+  const handleArtifactsOpen = useCallback(() => setArtifactsOpen(true), [])
+  const handleSettingsOpen = useCallback(() => setSettingsOpen(true), [])
+  
+  const handleAnalyticsClose = useCallback((open: boolean) => setAnalyticsOpen(open), [])
+  const handleArtifactsClose = useCallback((open: boolean) => setArtifactsOpen(open), [])
+  const handleSettingsClose = useCallback((open: boolean) => setSettingsOpen(open), [])
+
+  // Memoized styles for performance
+  const sidebarStyle = useMemo(() => ({
+    width: isCollapsed ? '48px' : `${width}px`,
+    minWidth: isCollapsed ? '48px' : '200px',
+    maxWidth: isCollapsed ? '48px' : '600px',
+    // GPU acceleration for smooth animations
+    transform: 'translateZ(0)',
+    willChange: 'width',
+    backfaceVisibility: 'hidden' as const,
+  }), [isCollapsed, width])
+
+  // Dynamic transition duration based on performance mode
+  const transitionDuration = shouldReduceAnimations ? 'duration-0' : 'duration-200'
 
   return (
     <>
       <div 
         className={cn(
-          "terminal-panel border-r flex flex-col h-full transition-all duration-200 ease-out",
+          "terminal-panel border-r flex flex-col h-full transition-all ease-out",
+          transitionDuration,
           className
         )}
-        style={{ 
-          width: isCollapsed ? '48px' : `${width}px`,
-          minWidth: isCollapsed ? '48px' : '200px',
-          maxWidth: isCollapsed ? '48px' : '600px'
-        }}
+        style={sidebarStyle}
       >
         {/* Header */}
         <div className={cn("terminal-header", isCollapsed ? "p-2" : "p-4")}>
@@ -114,7 +144,7 @@ export function Sidebar({ className, width = 320, isCollapsed = false, onCollaps
                 variant="ghost" 
                 className="w-full justify-start" 
                 size="sm"
-                onClick={() => setArtifactsOpen(true)}
+                onClick={handleArtifactsOpen}
               >
                 <Package className="h-4 w-4 mr-2" />
                 Artifacts
@@ -125,7 +155,7 @@ export function Sidebar({ className, width = 320, isCollapsed = false, onCollaps
                 variant="ghost" 
                 className="w-full justify-start" 
                 size="sm"
-                onClick={() => setAnalyticsOpen(true)}
+                onClick={handleAnalyticsOpen}
               >
                 <BarChart3 className="h-4 w-4 mr-2" />
                 Analytics
@@ -222,7 +252,7 @@ export function Sidebar({ className, width = 320, isCollapsed = false, onCollaps
                   variant="ghost" 
                   className="w-full justify-start" 
                   size="sm"
-                  onClick={() => setSettingsOpen(true)}
+                  onClick={handleSettingsOpen}
                 >
                   <Settings className="h-4 w-4 mr-2" />
                   Settings
@@ -252,16 +282,16 @@ export function Sidebar({ className, width = 320, isCollapsed = false, onCollaps
       {/* Modals */}
       <AnalyticsModal 
         open={analyticsOpen} 
-        onOpenChange={setAnalyticsOpen} 
+        onOpenChange={handleAnalyticsClose} 
       />
       <ArtifactsModal 
         open={artifactsOpen} 
-        onOpenChange={setArtifactsOpen} 
+        onOpenChange={handleArtifactsClose} 
       />
       <SettingsModal 
         open={settingsOpen} 
-        onOpenChange={setSettingsOpen} 
+        onOpenChange={handleSettingsClose} 
       />
     </>
   )
-}
+})

@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Card } from '@/components/ui/card'
 import { Send, Copy, RotateCw, Settings, Package, User, Bot, Folder } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useProjectStore } from '@/stores/project-store'
+import { useRenderPerformance, usePerformanceMode } from '@/hooks/usePerformance'
 
 interface ConversationAreaProps {
   className?: string
@@ -20,7 +21,58 @@ interface Message {
   artifacts?: Array<{ id: string; name: string; type: string }>
 }
 
-export function ConversationArea({ className }: ConversationAreaProps) {
+// Memoized Message Component for performance
+const MessageComponent = React.memo<{ message: Message; formatTime: (date: Date) => string }>(function MessageComponent({ message: msg, formatTime }) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2 text-sm">
+        {msg.sender === 'user' ? (
+          <>
+            <User className="h-4 w-4" />
+            <span className="font-medium">You</span>
+          </>
+        ) : (
+          <>
+            <Bot className="h-4 w-4" />
+            <span className="font-medium">Shepherd</span>
+          </>
+        )}
+        <span className="text-muted-gray">• {formatTime(msg.timestamp)}</span>
+      </div>
+      
+      <Card className={cn(
+        "p-4 max-w-4xl",
+        msg.sender === 'user' ? "message-user ml-6" : "message-ai ml-6"
+      )}>
+        <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed">
+          {msg.content}
+        </pre>
+        
+        {msg.artifacts && msg.artifacts.length > 0 && (
+          <div className="flex gap-2 mt-4">
+            {msg.artifacts.map((artifact) => (
+              <Button
+                key={artifact.id}
+                variant="outline"
+                size="sm"
+                className="h-8"
+              >
+                <Package className="h-3 w-3 mr-1" />
+                {artifact.name}
+              </Button>
+            ))}
+          </div>
+        )}
+      </Card>
+    </div>
+  )
+})
+
+export const ConversationArea = React.memo<ConversationAreaProps>(function ConversationArea({ className }) {
+  // Performance monitoring
+  const renderTime = useRenderPerformance('ConversationArea')
+  const { maxItemsToRender } = usePerformanceMode()
+  
   const [message, setMessage] = useState('')
   const { projectFolder } = useProjectStore()
   const [messages, setMessages] = useState<Message[]>([
@@ -83,7 +135,8 @@ Top memory consumers:
     scrollToBottom()
   }, [messages])
 
-  const handleSend = () => {
+  // Memoized callbacks
+  const handleSend = useCallback(() => {
     if (!message.trim()) return
 
     const newMessage: Message = {
@@ -110,16 +163,20 @@ I'm working on implementing your request. This may take a moment while I analyze
       }
       setMessages(prev => [...prev, aiResponse])
     }, 1000)
-  }
+  }, [message])
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handleSend()
     }
-  }
+  }, [handleSend])
+  
+  const handleMessageChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setMessage(e.target.value)
+  }, [])
 
-  const formatTime = (date: Date) => {
+  const formatTime = useCallback((date: Date) => {
     const now = new Date()
     const diff = now.getTime() - date.getTime()
     const minutes = Math.floor(diff / 60000)
@@ -128,7 +185,14 @@ I'm working on implementing your request. This may take a moment while I analyze
     const hours = Math.floor(minutes / 60)
     if (hours < 24) return `${hours}h ago`
     return date.toLocaleDateString()
-  }
+  }, [])
+  
+  // Virtualized messages for performance with large message lists
+  const visibleMessages = useMemo(() => {
+    return messages.length > maxItemsToRender 
+      ? messages.slice(-maxItemsToRender)
+      : messages
+  }, [messages, maxItemsToRender])
 
   return (
     <div className={cn("flex-1 flex flex-col overflow-hidden h-full", className)} style={{ backgroundColor: 'var(--background)' }}>
@@ -162,48 +226,12 @@ I'm working on implementing your request. This may take a moment while I analyze
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
-        {messages.map((msg) => (
-          <div key={msg.id} className="space-y-2">
-            <div className="flex items-center gap-2 text-sm">
-              {msg.sender === 'user' ? (
-                <>
-                  <User className="h-4 w-4" />
-                  <span className="font-medium">You</span>
-                </>
-              ) : (
-                <>
-                  <Bot className="h-4 w-4" />
-                  <span className="font-medium">Shepherd</span>
-                </>
-              )}
-              <span className="text-muted-gray">• {formatTime(msg.timestamp)}</span>
-            </div>
-            
-            <Card className={cn(
-              "p-4 max-w-4xl",
-              msg.sender === 'user' ? "message-user ml-6" : "message-ai ml-6"
-            )}>
-              <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed">
-                {msg.content}
-              </pre>
-              
-              {msg.artifacts && msg.artifacts.length > 0 && (
-                <div className="flex gap-2 mt-4">
-                  {msg.artifacts.map((artifact) => (
-                    <Button
-                      key={artifact.id}
-                      variant="outline"
-                      size="sm"
-                      className="h-8"
-                    >
-                      <Package className="h-3 w-3 mr-1" />
-                      {artifact.name}
-                    </Button>
-                  ))}
-                </div>
-              )}
-            </Card>
-          </div>
+        {visibleMessages.map((msg) => (
+          <MessageComponent
+            key={msg.id}
+            message={msg}
+            formatTime={formatTime}
+          />
         ))}
         <div ref={messagesEndRef} />
       </div>
@@ -214,7 +242,7 @@ I'm working on implementing your request. This may take a moment while I analyze
           <div className="flex-1">
             <Textarea
               value={message}
-              onChange={(e) => setMessage(e.target.value)}
+              onChange={handleMessageChange}
               onKeyDown={handleKeyDown}
               placeholder="Type your message... (Shift+Enter for new line, Enter to send)"
               className="min-h-[60px] max-h-32 resize-none"
@@ -233,4 +261,4 @@ I'm working on implementing your request. This may take a moment while I analyze
       </div>
     </div>
   )
-}
+})
